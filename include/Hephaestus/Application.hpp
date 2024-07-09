@@ -20,7 +20,7 @@ struct SApplicationSettings {
     bool IsVSyncEnabled;
 };
 
-auto RunApplication(const SApplicationSettings &applicationSettings,
+auto RunApplication(const SApplicationSettings& applicationSettings,
                     std::function<bool(entt::registry&)>&& applicationLoad,
                     std::function<void(entt::registry&, float)>&& applicationUpdate,
                     std::function<void(entt::registry&, float)>&& applicationRender,
