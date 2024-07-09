@@ -8,8 +8,8 @@ to handle Vulkan too, let's see.
 Various people help or have helped me in the process. Be it funny comments, actual advise or ideas for the future.
 
 Thank you: 
-- [Jaker](https://github.com/JuanDiegoMontoya),
-- [LVSTRI](https://github.com/LVSTRI/),
+- [Jaker](https://github.com/JuanDiegoMontoya)
+- [LVSTRI](https://github.com/LVSTRI/)
 - [sean](https://github.com/spnda)
 - [Eearslya](https://github.com/Eearslya)
 - [DomeboyRichter](https://github.com/forenoonwatch)
