@@ -1,6 +1,8 @@
 #include <Hephaestus/Application.hpp>
 #include <Hephaestus/VectorMath.hpp>
 
+#include <thread>
+
 #include <spdlog/spdlog.h>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -23,24 +25,7 @@ const glm::vec3 g_unitY = glm::vec3{0.0f, 1.0f, 0.0f};
 const glm::vec3 g_unitZ = glm::vec3{0.0f, 0.0f, 1.0f};
 
 ImGuiContext* g_imguiContext = nullptr;
-
 GLFWwindow* g_window = nullptr;
-bool g_isEditor = false;
-bool g_sleepWhenWindowHasNoFocus = true;
-bool g_windowHasFocus = false;
-bool g_windowFramebufferResized = false;
-bool g_sceneViewerResized = false;
-bool g_cursorJustEntered = false;
-bool g_cursorIsActive = true;
-float g_cursorSensitivity = 0.0025f;
-
-glm::dvec2 g_cursorPosition = {};
-glm::dvec2 g_cursorFrameOffset = {};
-
-glm::ivec2 g_windowFramebufferSize = {};
-glm::ivec2 g_windowFramebufferScaledSize = {};
-glm::ivec2 g_sceneViewerSize = {};
-glm::ivec2 g_sceneViewerScaledSize = {};
 
 auto OnWindowKey(
         GLFWwindow* window,
@@ -53,9 +38,9 @@ auto OnWindowKey(
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
     if (key == GLFW_KEY_F1 && action == GLFW_PRESS) {
-        g_isEditor = !g_isEditor;
-        g_windowFramebufferResized = !g_isEditor;
-        g_sceneViewerResized = g_isEditor;
+        g_applicationContext.IsEditor = !g_applicationContext.IsEditor;
+        g_applicationContext.WindowFramebufferResized = !g_applicationContext.IsEditor;
+        g_applicationContext.SceneViewerResized = g_applicationContext.IsEditor;
     }
 }
 
@@ -64,10 +49,10 @@ auto OnWindowCursorEntered(
         int entered) -> void {
 
     if (entered) {
-        g_cursorJustEntered = true;
+        g_applicationContext.CursorJustEntered = true;
     }
 
-    g_windowHasFocus = entered == GLFW_TRUE;
+    g_applicationContext.WindowHasFocus = entered == GLFW_TRUE;
 }
 
 auto OnWindowCursorPosition(
@@ -75,16 +60,16 @@ auto OnWindowCursorPosition(
         double cursorPositionX,
         double cursorPositionY) -> void {
 
-    if (g_cursorJustEntered)
+    if (g_applicationContext.CursorJustEntered)
     {
-        g_cursorPosition = {cursorPositionX, cursorPositionY};
-        g_cursorJustEntered = false;
+        g_applicationContext.CursorPosition = {cursorPositionX, cursorPositionY};
+        g_applicationContext.CursorJustEntered = false;
     }
 
-    g_cursorFrameOffset += glm::dvec2{
-            cursorPositionX - g_cursorPosition.x,
-            g_cursorPosition.y - cursorPositionY};
-    g_cursorPosition = {cursorPositionX, cursorPositionY};
+    g_applicationContext.CursorFrameOffset += glm::dvec2{
+            cursorPositionX - g_applicationContext.CursorPosition.x,
+            g_applicationContext.CursorPosition.y - cursorPositionY};
+    g_applicationContext.CursorPosition = {cursorPositionX, cursorPositionY};
 }
 
 auto OnWindowFramebufferSizeChanged(
@@ -92,8 +77,8 @@ auto OnWindowFramebufferSizeChanged(
         const int width,
         const int height) -> void {
 
-    g_windowFramebufferSize = glm::ivec2{width, height};
-    g_windowFramebufferResized = true;
+    g_applicationContext.WindowFramebufferSize = glm::ivec2{width, height};
+    g_applicationContext.WindowFramebufferResized = true;
 }
 
 auto OnOpenGLDebugMessage(
@@ -140,12 +125,16 @@ auto InternalApplicationInitialize(const SApplicationSettings& applicationSettin
     const auto screenWidth = primaryMonitorVideoMode->width;
     const auto screenHeight = primaryMonitorVideoMode->height;
 
-    const auto windowWidth = applicationSettings.ResolutionWidth;
-    const auto windowHeight = applicationSettings.ResolutionHeight;
+    const auto windowWidth = applicationSettings.ResolutionStartup == EResolutionStartup::NinetyPercentOfScreenSize
+        ? static_cast<int>(static_cast<float>(screenWidth) * 0.9f)
+        : applicationSettings.ResolutionWidth;
+    const auto windowHeight = applicationSettings.ResolutionStartup == EResolutionStartup::NinetyPercentOfScreenSize
+        ? static_cast<int>(static_cast<float>(screenHeight) * 0.9f)
+        : applicationSettings.ResolutionHeight;
 
     auto monitor = applicationSettings.WindowStyle == EWindowStyle::FullscreenExclusive
-                   ? primaryMonitor
-                   : nullptr;
+        ? primaryMonitor
+        : nullptr;
 
     g_window = glfwCreateWindow(windowWidth, windowHeight, "Hephaestus", monitor, nullptr);
     if (g_window == nullptr) {
@@ -166,7 +155,7 @@ auto InternalApplicationInitialize(const SApplicationSettings& applicationSettin
     glfwSetCursorPosCallback(g_window, OnWindowCursorPosition);
     glfwSetCursorEnterCallback(g_window, OnWindowCursorEntered);
     glfwSetFramebufferSizeCallback(g_window, OnWindowFramebufferSizeChanged);
-    glfwSetInputMode(g_window, GLFW_CURSOR, g_cursorIsActive ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+    glfwSetInputMode(g_window, GLFW_CURSOR, g_applicationContext.CursorIsActive ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
 
     int32_t windowFramebufferWidth = 0;
     int32_t windowFramebufferHeight = 0;
@@ -231,6 +220,7 @@ auto RunApplication(const SApplicationSettings& applicationSettings,
                     std::function<bool(entt::registry&)>&& applicationLoad,
                     std::function<void(entt::registry&, float)>&& applicationUpdate,
                     std::function<void(entt::registry&, float)>&& applicationRender,
+                    std::function<void(entt::registry&, float)>&& applicationRenderUi,
                     std::function<void()>&& applicationUnload) -> void {
 
     if (!InternalApplicationInitialize(applicationSettings)) {
@@ -243,9 +233,13 @@ auto RunApplication(const SApplicationSettings& applicationSettings,
         return;
     }
 
+    auto isSrgbDisabled = false;
+    auto isCullfaceDisabled = false;
+
     spdlog::info("Application: Initialized");
 
-    uint64_t frameCounter = 0;
+    glm::ivec2 scaledFramebufferSize = {};
+
     auto currentTimeInSeconds = glfwGetTime();
     auto previousTimeInSeconds = glfwGetTime();
     auto accumulatedTimeInSeconds = 0.0;
@@ -256,11 +250,43 @@ auto RunApplication(const SApplicationSettings& applicationSettings,
         previousTimeInSeconds = currentTimeInSeconds;
         currentTimeInSeconds = glfwGetTime();
 
-        applicationUpdate(registry, static_cast<float>(deltaTimeInSeconds));
-        applicationRender(registry, static_cast<float>(deltaTimeInSeconds));
+        auto deltaTime = static_cast<float>(deltaTimeInSeconds);
+        applicationUpdate(registry, deltaTime);
+
+        if (isSrgbDisabled) {
+            glEnable(GL_FRAMEBUFFER_SRGB);
+            isSrgbDisabled = false;
+        }
+
+        applicationRender(registry, deltaTime);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        applicationRenderUi(registry, deltaTime);
+
+        {
+            ImGui::Render();
+            auto* imGuiDrawData = ImGui::GetDrawData();
+            if (imGuiDrawData != nullptr) {
+                glDisable(GL_FRAMEBUFFER_SRGB);
+                //isSrgbDisabled = true;
+                //PushDebugGroup("UI");
+                glViewport(0, 0, g_applicationContext.WindowFramebufferSize.x, g_applicationContext.WindowFramebufferSize.y);
+                ImGui_ImplOpenGL3_RenderDrawData(imGuiDrawData);
+                //PopDebugGroup();
+            }
+        }
+        glfwSwapBuffers(g_window);
 
         glfwPollEvents();
-        glfwSwapBuffers(g_window);
+        g_applicationContext.FrameCounter++;
+        if (!g_applicationContext.WindowHasFocus && g_applicationContext.SleepWhenWindowHasNoFocus) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        }
     }
 
     applicationUnload();
