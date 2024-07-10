@@ -17,9 +17,6 @@
 
 // Application
 
-constexpr ImVec2 g_imvec2UnitX = ImVec2(1, 0);
-constexpr ImVec2 g_imvec2UnitY = ImVec2(0, 1);
-
 const glm::vec3 g_unitX = glm::vec3{1.0f, 0.0f, 0.0f};
 const glm::vec3 g_unitY = glm::vec3{0.0f, 1.0f, 0.0f};
 const glm::vec3 g_unitZ = glm::vec3{0.0f, 0.0f, 1.0f};

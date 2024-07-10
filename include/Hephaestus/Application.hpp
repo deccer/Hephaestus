@@ -34,7 +34,7 @@ inline struct SApplicationContext {
     bool WindowFramebufferResized = false;
     bool SceneViewerResized = false;
     bool CursorJustEntered = false;
-    bool CursorIsActive = false;
+    bool CursorIsActive = true;
     float CursorSensitivity = 0.0025f;
 
     glm::dvec2 CursorPosition = {};

@@ -9,6 +9,8 @@ SApplicationSettings g_applicationSettings = {};
 SFramebuffer g_geometryFramebuffer = {};
 
 glm::ivec2 g_scaledFramebufferSize = {};
+constexpr ImVec2 g_imvec2UnitX = ImVec2(1, 0);
+constexpr ImVec2 g_imvec2UnitY = ImVec2(0, 1);
 
 auto DeleteRendererFramebuffers() -> void {
 
@@ -73,6 +75,9 @@ auto GameRender(entt::registry& registry, float deltaTime) -> void {
 
         if (g_applicationContext.FrameCounter > 0) {
             DeleteRendererFramebuffers();
+            if (g_scaledFramebufferSize.x + g_scaledFramebufferSize.y <= glm::epsilon<float>()) {
+                g_scaledFramebufferSize = g_applicationContext.WindowFramebufferScaledSize;
+            }
         }
         CreateRendererFramebuffers(g_scaledFramebufferSize);
 
@@ -108,6 +113,44 @@ auto GameRenderUI(entt::registry& registry, float deltaTime) -> void {
         ImGui::PopStyleColor();
     }
 
+    if (g_applicationContext.IsEditor) {
+        ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+
+        if (ImGui::BeginMainMenuBar()) {
+            //ImGui::Image(reinterpret_cast<ImTextureID>(g_iconPackageGreen), ImVec2(16, 16), g_imvec2UnitY, g_imvec2UnitX);
+            ImGui::SetCursorPosX(20.0f);
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Quit")) {
+
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+
+        // Scene Viewer
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        if (ImGui::Begin("Scene")) {
+            auto availableSceneWindowSize = ImGui::GetContentRegionAvail();
+            if (availableSceneWindowSize.x != g_applicationContext.SceneViewerSize.x || availableSceneWindowSize.y != g_applicationContext.SceneViewerSize.y) {
+                g_applicationContext.SceneViewerSize = glm::ivec2(availableSceneWindowSize.x, availableSceneWindowSize.y);
+                g_applicationContext.SceneViewerResized = true;
+            }
+
+            auto texture = g_geometryFramebuffer.ColorAttachments[1].value().Texture.Id;
+            auto imagePosition = ImGui::GetCursorPos();
+            ImGui::Image(reinterpret_cast<ImTextureID>(texture), availableSceneWindowSize, g_imvec2UnitY, g_imvec2UnitX);
+            ImGui::SetCursorPos(imagePosition);
+            if (ImGui::BeginChild(1, ImVec2{192, -1})) {
+                if (ImGui::CollapsingHeader("Statistics")) {
+                    ImGui::Text("Text");
+                }
+            }
+            ImGui::EndChild();
+        }
+        ImGui::PopStyleVar();
+        ImGui::End();
+    }
 }
 
 auto GameUnload() -> void {
