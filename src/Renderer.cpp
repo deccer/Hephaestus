@@ -1,13 +1,16 @@
-#include <Hephaestus/RHI.hpp>
+#include <Hephaestus/Renderer.hpp>
+#include <Hephaestus/Application.hpp>
+#include <Hephaestus/CpuComponents.hpp>
+#include <Hephaestus/Assets.hpp>
+
+#include <spdlog/spdlog.h>
+
+#include <glad/gl.h>
+#include <imgui.h>
 
 #define STB_INCLUDE_IMPLEMENTATION
 #define STB_INCLUDE_LINE_GLSL
-
 #include <stb_include.h>
-
-#define STB_IMAGE_IMPLEMENTATION
-
-#include <stb_image.h>
 
 #include <expected>
 #include <format>
@@ -15,18 +18,530 @@
 #include <string>
 #include <utility>
 
-#include <glad/gl.h>
+constexpr ImVec2 g_imvec2UnitX = ImVec2(1, 0);
+constexpr ImVec2 g_imvec2UnitY = ImVec2(0, 1);
+
+// RHI Interface ////////////////////////////////////////////////////////////////
 
 uint32_t g_defaultInputLayout = 0;
 uint32_t g_lastIndexBuffer = 0;
 
-std::vector<SSampler> g_samplers;
-SSamplerId g_samplerCounter = SSamplerId::Invalid;
+enum class EFormat : uint32_t {
 
-std::vector<STexture> g_textures;
-STextureId g_textureCounter = STextureId::Invalid;
+    Undefined,
 
-std::unordered_map<SSamplerDescriptor, SSamplerId> g_samplerDescriptors;
+    // Color formats
+    R8_UNORM,
+    R8_SNORM,
+    R16_UNORM,
+    R16_SNORM,
+    R8G8_UNORM,
+    R8G8_SNORM,
+    R16G16_UNORM,
+    R16G16_SNORM,
+    R3G3B2_UNORM,
+    R4G4B4_UNORM,
+    R5G5B5_UNORM,
+    R8G8B8_UNORM,
+    R8G8B8_SNORM,
+    R10G10B10_UNORM,
+    R12G12B12_UNORM,
+    R16G16B16_SNORM,
+    R2G2B2A2_UNORM,
+    R4G4B4A4_UNORM,
+    R5G5B5A1_UNORM,
+    R8G8B8A8_UNORM,
+    R8G8B8A8_SNORM,
+    R10G10B10A2_UNORM,
+    R10G10B10A2_UINT,
+    R12G12B12A12_UNORM,
+    R16G16B16A16_UNORM,
+    R16G16B16A16_SNORM,
+    R8G8B8_SRGB,
+    R8G8B8A8_SRGB,
+    R16_FLOAT,
+    R16G16_FLOAT,
+    R16G16B16_FLOAT,
+    R16G16B16A16_FLOAT,
+    R32_FLOAT,
+    R32G32_FLOAT,
+    R32G32B32_FLOAT,
+    R32G32B32A32_FLOAT,
+    R11G11B10_FLOAT,
+    R9G9B9_E5,
+    R8_SINT,
+    R8_UINT,
+    R16_SINT,
+    R16_UINT,
+    R32_SINT,
+    R32_UINT,
+    R8G8_SINT,
+    R8G8_UINT,
+    R16G16_SINT,
+    R16G16_UINT,
+    R32G32_SINT,
+    R32G32_UINT,
+    R8G8B8_SINT,
+    R8G8B8_UINT,
+    R16G16B16_SINT,
+    R16G16B16_UINT,
+    R32G32B32_SINT,
+    R32G32B32_UINT,
+    R8G8B8A8_SINT,
+    R8G8B8A8_UINT,
+    R16G16B16A16_SINT,
+    R16G16B16A16_UINT,
+    R32G32B32A32_SINT,
+    R32G32B32A32_UINT,
+
+    // Depth & stencil formats
+    D32_FLOAT,
+    D32_UNORM,
+    D24_UNORM,
+    D16_UNORM,
+    D32_FLOAT_S8_UINT,
+    D24_UNORM_S8_UINT,
+    S8_UINT,
+
+    // Compressed formats
+    // DXT
+    BC1_RGB_UNORM,
+    BC1_RGB_SRGB,
+    BC1_RGBA_UNORM,
+    BC1_RGBA_SRGB,
+    BC2_RGBA_UNORM,
+    BC2_RGBA_SRGB,
+    BC3_RGBA_UNORM,
+    BC3_RGBA_SRGB,
+    // RGTC
+    BC4_R_UNORM,
+    BC4_R_SNORM,
+    BC5_RG_UNORM,
+    BC5_RG_SNORM,
+    // BPTC
+    BC6H_RGB_UFLOAT,
+    BC6H_RGB_SFLOAT,
+    BC7_RGBA_UNORM,
+    BC7_RGBA_SRGB
+};
+
+enum class EFormatClass {
+    Float,
+    Integer,
+    Long
+};
+
+enum class EBaseTypeClass {
+    Float,
+    Integer,
+    UnsignedInteger
+};
+
+enum class ETextureType : uint32_t {
+    Texture1D,
+    Texture1DArray,
+    Texture2D,
+    Texture2DArray,
+    Texture2DMultisample,
+    Texture2DMultisampleArray,
+    Texture3D,
+    TextureCube,
+    TextureCubeArray,
+};
+
+enum class ESampleCount : uint32_t {
+    One = 1,
+    Two = 2,
+    Four = 4,
+    Eight = 8,
+    SixTeen = 16,
+    ThirtyTwo = 32,
+};
+
+enum class EUploadFormat : uint32_t {
+    Undefined,
+    Auto,
+    R,
+    Rg,
+    Rgb,
+    Bgr,
+    Rgba,
+    Bgra,
+    RInteger,
+    RgInteger,
+    RgbInteger,
+    BgrInteger,
+    RgbaInteger,
+    BgraInteger,
+    Depth,
+    StencilIndex,
+    DepthStencilIndex,
+};
+
+enum class EUploadType : uint32_t {
+    Undefined,
+    Auto,
+    UnsignedByte,
+    SignedByte,
+    UnsignedShort,
+    SignedShort,
+    UnsignedInteger,
+    SignedInteger,
+    Float,
+    UnsignedByte332,
+    UnsignedByte233Reversed,
+    UnsignedShort565,
+    UnsignedShort565Reversed,
+    UnsignedShort4444,
+    UnsignedShort4444Reversed,
+    UnsignedShort5551,
+    UnsignedShort1555Reversed,
+    UnsignedInteger8888,
+    UnsignedInteger8888Reversed,
+    UnsignedInteger1010102,
+    UnsignedInteger2101010Reversed,
+};
+
+enum class EAttachmentType : uint32_t {
+    ColorAttachment0 = 0u,
+    ColorAttachment1,
+    ColorAttachment2,
+    ColorAttachment3,
+    ColorAttachment4,
+    ColorAttachment5,
+    ColorAttachment6,
+    ColorAttachment7,
+    DepthAttachment,
+    StencilAttachment
+};
+
+enum class ETextureAddressMode {
+    Repeat,
+    RepeatMirrored,
+    ClampToEdge,
+    ClampToBorder,
+    ClampToEdgeMirrored,
+};
+
+enum class ETextureMinFilter {
+    Nearest,
+    NearestMipmapLinear,
+    NearestMipmapNearest,
+    Linear,
+    LinearMipmapLinear,
+    LinearMipmapNearest,
+};
+
+enum class ETextureMagFilter {
+    Nearest,
+    Linear
+};
+
+enum class EPrimitiveTopology {
+    Triangles,
+    TriangleStip,
+    TriangleFan,
+    Lines,
+};
+
+enum class EFramebufferAttachmentLoadOperation {
+    Load,
+    Clear,
+    DontCare
+};
+
+using STextureId = SId<struct TTextureId>;
+using SSamplerId = SId<struct TSamplerId>;
+
+struct SCreateTextureDescriptor {
+    ETextureType TextureType = {};
+    EFormat Format = {};
+    SExtent3D Extent = {};
+    uint32_t MipMapLevels = 0;
+    uint32_t Layers = 0;
+    ESampleCount SampleCount = {};
+    std::string Label = {};
+};
+
+struct SUploadTextureDescriptor {
+    uint32_t Level;
+    SOffset3D Offset;
+    SExtent3D Extent;
+    EUploadFormat UploadFormat = EUploadFormat::Auto;
+    EUploadType UploadType = EUploadType::Auto;
+    const void* PixelData = nullptr;
+};
+
+struct STexture {
+    uint32_t Id;
+    EFormat Format;
+    SExtent3D Extent;
+    ETextureType TextureType;
+};
+
+struct SFramebufferAttachmentClearColor {
+    SFramebufferAttachmentClearColor() = default;
+
+    template<typename... Args>
+    requires (sizeof...(Args) <= 4)
+    SFramebufferAttachmentClearColor(const Args& ... args)
+        : Data(std::array<std::common_type_t<std::remove_cvref_t<Args>...>, 4>{ args... }) {
+    }
+
+    std::variant<std::array<float, 4>, std::array<uint32_t, 4>, std::array<int32_t, 4>> Data;
+};
+
+struct SFramebufferAttachmentClearDepthStencil {
+    float Depth = {};
+    int32_t Stencil = {};
+};
+
+struct SFramebufferAttachmendDescriptor {
+    std::string_view Label;
+    EFormat Format;
+    SExtent2D Extent;
+    EFramebufferAttachmentLoadOperation LoadOperation;
+};
+
+struct SFramebufferColorAttachmentDescriptor {
+    std::string_view Label;
+    EFormat Format;
+    SExtent2D Extent;
+    EFramebufferAttachmentLoadOperation LoadOperation;
+    SFramebufferAttachmentClearColor ClearColor;
+};
+
+struct SFramebufferDepthStencilAttachmentDescriptor {
+    std::string_view Label;
+    EFormat Format;
+    SExtent2D Extent;
+    EFramebufferAttachmentLoadOperation LoadOperation;
+    SFramebufferAttachmentClearDepthStencil ClearDepthStencil;
+};
+
+struct SFramebufferDescriptor {
+    std::string_view Label;
+    std::array<std::optional<SFramebufferColorAttachmentDescriptor>, 8> ColorAttachments;
+    std::optional<SFramebufferDepthStencilAttachmentDescriptor> DepthStencilAttachment;
+};
+
+struct SFramebufferColorAttachment {
+    STexture Texture;
+    SFramebufferAttachmentClearColor ClearColor;
+    EFramebufferAttachmentLoadOperation LoadOperation;
+};
+
+struct SFramebufferDepthStencilAttachment {
+    STexture Texture;
+    SFramebufferAttachmentClearDepthStencil ClearDepthStencil;
+    EFramebufferAttachmentLoadOperation LoadOperation;
+};
+
+struct SFramebuffer {
+    uint32_t Id;
+    std::array<std::optional<SFramebufferColorAttachment>, 8> ColorAttachments;
+    std::optional<SFramebufferDepthStencilAttachment> DepthStencilAttachment;
+};
+
+struct SSamplerDescriptor {
+    std::string_view Label;
+    ETextureAddressMode AddressModeU = ETextureAddressMode::ClampToEdge;
+    ETextureAddressMode AddressModeV = ETextureAddressMode::ClampToEdge;
+    ETextureAddressMode AddressModeW = ETextureAddressMode::ClampToEdge;
+    ETextureMagFilter MagFilter = ETextureMagFilter::Linear;
+    ETextureMinFilter MinFilter = ETextureMinFilter::Linear;
+    float LodBias = 0;
+    float LodMin = -1000;
+    float LodMax = 1000;
+
+    bool operator==(const SSamplerDescriptor& rhs) const {
+        return Label == rhs.Label &&
+               AddressModeU == rhs.AddressModeU &&
+               AddressModeV == rhs.AddressModeV &&
+               AddressModeW == rhs.AddressModeW &&
+               MagFilter == rhs.MagFilter &&
+               MinFilter == rhs.MinFilter &&
+               LodBias == rhs.LodBias &&
+               LodMin == rhs.LodMin &&
+               LodMax == rhs.LodMax;
+    }
+};
+
+namespace std {
+    template<>
+    struct hash<SSamplerDescriptor> {
+        size_t operator()(const SSamplerDescriptor& samplerDescriptor) const {
+            size_t seed = 0;
+            hash_combine(seed, samplerDescriptor.Label);
+            hash_combine(seed, samplerDescriptor.AddressModeU);
+            hash_combine(seed, samplerDescriptor.AddressModeV);
+            hash_combine(seed, samplerDescriptor.AddressModeW);
+            hash_combine(seed, samplerDescriptor.MagFilter);
+            hash_combine(seed, samplerDescriptor.MinFilter);
+            hash_combine(seed, samplerDescriptor.LodBias);
+            hash_combine(seed, samplerDescriptor.LodMax);
+            hash_combine(seed, samplerDescriptor.LodMin);
+            return seed;
+        }
+
+    private:
+        template<typename T>
+        void hash_combine(size_t& seed, const T& v) const {
+            std::hash<T> hasher;
+            seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        }
+    };
+}
+
+struct SSampler {
+    uint32_t Id;
+};
+
+struct SInputAssemblyDescriptor {
+    EPrimitiveTopology PrimitiveTopology = EPrimitiveTopology::Triangles;
+    bool IsPrimitiveRestartEnabled = false;
+};
+
+struct SVertexInputAttributeDescriptor {
+    uint32_t Location;
+    uint32_t Binding;
+    EFormat Format;
+    uint32_t Offset;
+};
+
+struct SVertexInputDescriptor {
+    std::array<std::optional<const SVertexInputAttributeDescriptor>, 8> VertexInputAttributes = {};
+};
+
+struct SGraphicsPipelineDescriptor {
+    std::string_view Label;
+    std::string_view VertexShaderFilePath;
+    std::string_view FragmentShaderFilePath;
+
+    SInputAssemblyDescriptor InputAssembly;
+    std::optional<SVertexInputDescriptor> VertexInput;
+};
+
+struct SComputePipelineDescriptor {
+    std::string_view Label;
+    std::string_view ComputeShaderFilePath;
+};
+
+struct SPipeline {
+
+    virtual ~SPipeline() = default;
+
+    auto virtual Bind() -> void {
+        glUseProgram(Id);
+    }
+
+    auto BindBufferAsUniformBuffer(uint32_t buffer, int32_t bindingIndex) -> void {
+        glBindBufferBase(GL_UNIFORM_BUFFER, bindingIndex, buffer);
+    }
+
+    auto BindBufferAsShaderStorageBuffer(uint32_t buffer, int32_t bindingIndex) -> void {
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, buffer);
+    }
+
+    auto BindTexture(int32_t bindingIndex, uint32_t texture) -> void {
+        glBindTextureUnit(bindingIndex, texture);
+    }
+
+    auto BindTextureAndSampler(int32_t bindingIndex, uint32_t texture, uint32_t sampler) -> void {
+        glBindTextureUnit(bindingIndex, texture);
+        glBindSampler(bindingIndex, sampler);
+    }
+
+    auto SetUniform(int32_t location, float value) -> void {
+        glProgramUniform1f(Id, location, value);
+    }
+
+    auto SetUniform(int32_t location, int32_t value) -> void {
+        glProgramUniform1i(Id, location, value);
+    }
+
+    auto SetUniform(int32_t location, uint32_t value) -> void {
+        glProgramUniform1ui(Id, location, value);
+    }
+
+    auto SetUniform(int32_t location, uint64_t value) -> void {
+        glProgramUniformHandleui64ARB(Id, location, value);
+    }
+
+    auto SetUniform(int32_t location, const glm::vec2& value) -> void {
+        glProgramUniform2fv(Id, location, 1, glm::value_ptr(value));
+    }
+
+    auto SetUniform(int32_t location, const glm::vec3& value) -> void {
+        glProgramUniform3fv(Id, location, 1, glm::value_ptr(value));
+    }
+
+    auto SetUniform(int32_t location, float value1, float value2, float value3, float value4) -> void {
+        glProgramUniform4f(Id, location, value1, value2, value3, value4);
+    }
+
+    auto SetUniform(int32_t location, int32_t value1, int32_t value2, int32_t value3, int32_t value4) -> void {
+        glProgramUniform4i(Id, location, value1, value2, value3, value4);
+    }
+
+    auto SetUniform(int32_t location, const glm::vec4& value) -> void {
+        glProgramUniform4fv(Id, location, 1, glm::value_ptr(value));
+    }
+
+    auto SetUniform(int32_t location, const glm::mat4& value) -> void {
+        glProgramUniformMatrix4fv(Id, location, 1, GL_FALSE, glm::value_ptr(value));
+    }
+
+    uint32_t Id;
+};
+
+struct SGraphicsPipeline : public SPipeline {
+
+    auto Bind() -> void override {
+
+        SPipeline::Bind();
+        glBindVertexArray(InputLayout.value_or(g_defaultInputLayout));
+    }
+
+    auto BindBufferAsVertexBuffer(uint32_t buffer, uint32_t bindingIndex, long offset, int32_t stride) -> void {
+
+        if (InputLayout.has_value()) {
+            glVertexArrayVertexBuffer(*InputLayout, bindingIndex, buffer, offset, stride);
+        }
+    }
+
+    auto DrawArrays(int32_t vertexOffset, int32_t vertexCount) -> void {
+
+        glDrawArrays(PrimitiveTopology, vertexOffset, vertexCount);
+    }
+
+    auto DrawElements(uint32_t indexBuffer, int32_t elementCount) -> void {
+
+        if (g_lastIndexBuffer != indexBuffer) {
+            glVertexArrayElementBuffer(InputLayout.has_value() ? InputLayout.value() : g_defaultInputLayout, indexBuffer);
+            g_lastIndexBuffer = indexBuffer;
+        }
+
+        glDrawElements(PrimitiveTopology, elementCount, GL_UNSIGNED_INT, nullptr);
+    }
+
+    auto DrawElementsInstanced(uint32_t indexBuffer, int32_t elementCount, int32_t instanceCount) -> void {
+        if (g_lastIndexBuffer != indexBuffer) {
+            glVertexArrayElementBuffer(InputLayout.has_value() ? InputLayout.value() : g_defaultInputLayout, indexBuffer);
+            g_lastIndexBuffer = indexBuffer;
+        }
+
+        glDrawElementsInstanced(PrimitiveTopology, elementCount, GL_UNSIGNED_INT, nullptr, instanceCount);
+    }
+
+    std::optional<uint32_t> InputLayout;
+    uint32_t PrimitiveTopology;
+    bool IsPrimitiveRestartEnabled;
+};
+
+struct SComputePipeline : public SPipeline {
+
+};
 
 auto ReadShaderTextFromFile(const std::filesystem::path& filePath) -> std::expected<std::string, std::string> {
 
@@ -873,48 +1388,40 @@ auto FormatToFormatClass(EFormat format) -> EFormatClass {
     }
 }
 
+// RHI Implementation ///////////////////////////////////////////////////////////
+
+std::unordered_map<std::string, SGpuMesh> g_gpuMeshes = {};
+std::unordered_map<std::string, SSampler> g_gpuSamplers = {};
+std::unordered_map<std::string, SGpuMaterial> g_gpuMaterials = {};
+
+std::vector<SSampler> g_samplers;
+SSamplerId g_samplerCounter = SSamplerId::Invalid;
+
+std::vector<STexture> g_textures;
+STextureId g_textureCounter = STextureId::Invalid;
+
+std::unordered_map<SSamplerDescriptor, SSamplerId> g_samplerDescriptors;
+
+auto SetDebugLabel(
+    const uint32_t object,
+    const uint32_t objectType,
+    const std::string_view label) -> void {
+
+    glObjectLabel(objectType, object, static_cast<GLsizei>(label.size()), label.data());
+}
+
+auto PushDebugGroup(const std::string_view label) -> void {
+    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, label.size(), label.data());
+}
+
+auto PopDebugGroup() -> void {
+    glPopDebugGroup();
+}
+
 inline auto GetTexture(STextureId id) -> STexture& {
 
     assert(id != STextureId::Invalid);
     return g_textures[size_t(id)];
-}
-
-/////////////////////////////////////////////////////////////
-
-auto FreeImage(void* pixels) -> void {
-    if (pixels != nullptr) {
-        stbi_image_free(pixels);
-    }
-}
-
-auto LoadImageFromMemory(std::byte* encodedData,
-                         size_t encodedDataSize,
-                         int32_t* width,
-                         int32_t* height,
-                         int32_t* components) -> unsigned char* {
-
-    return stbi_load_from_memory(
-        reinterpret_cast<const unsigned char*>(encodedData),
-        static_cast<int32_t>(encodedDataSize),
-        width,
-        height,
-        components,
-        4);
-}
-
-auto LoadImageFromFile(const std::filesystem::path& filePath,
-                       int32_t* width,
-                       int32_t* height,
-                       int32_t* components) -> unsigned char* {
-
-    auto imageFile = fopen(filePath.c_str(), "rb");
-    if (imageFile != nullptr) {
-        auto* pixels = stbi_load_from_file(imageFile, width, height, components, 4);
-        fclose(imageFile);
-        return pixels;
-    } else {
-        return nullptr;
-    }
 }
 
 auto CreateTexture(const SCreateTextureDescriptor& createTextureDescriptor) -> STextureId {
@@ -1212,21 +1719,21 @@ auto BindFramebuffer(const SFramebuffer& framebuffer) -> void {
                 auto baseTypeClass = FormatToBaseTypeClass(colorAttachment.Texture.Format);
                 switch (baseTypeClass) {
                     case EBaseTypeClass::Float:
-                        glClearNamedFramebufferfv(0, GL_COLOR, colorAttachmentIndex, std::get_if<std::array<float, 4>>(
+                        glClearNamedFramebufferfv(framebuffer.Id, GL_COLOR, colorAttachmentIndex, std::get_if<std::array<float, 4>>(
                             &colorAttachment.ClearColor.Data)->data());
                         break;
                     case EBaseTypeClass::Integer:
-                        glClearNamedFramebufferiv(0, GL_COLOR, colorAttachmentIndex,
+                        glClearNamedFramebufferiv(framebuffer.Id, GL_COLOR, colorAttachmentIndex,
                                                   std::get_if<std::array<int32_t, 4>>(
                                                       &colorAttachment.ClearColor.Data)->data());
                         break;
                     case EBaseTypeClass::UnsignedInteger:
-                        glClearNamedFramebufferuiv(0, GL_COLOR, colorAttachmentIndex,
+                        glClearNamedFramebufferuiv(framebuffer.Id, GL_COLOR, colorAttachmentIndex,
                                                    std::get_if<std::array<uint32_t, 4>>(
                                                        &colorAttachment.ClearColor.Data)->data());
                         break;
                     default:
-                        std::unreachable_sentinel;
+                        std::unreachable;
                 }
             }
         }
@@ -1258,6 +1765,10 @@ auto DeleteFramebuffer(const SFramebuffer& framebuffer) -> void {
     }
 
     glDeleteFramebuffers(1, &framebuffer.Id);
+}
+
+auto DeletePipeline(const SPipeline& pipeline) -> void {
+    glDeleteProgram(pipeline.Id);
 }
 
 auto CreateGraphicsProgram(
@@ -1469,121 +1980,6 @@ auto CreateComputePipeline(
     return pipeline;
 }
 
-auto SPipeline::Bind() -> void {
-    glUseProgram(Id);
-}
-
-auto SPipeline::BindBufferAsUniformBuffer(uint32_t buffer, int32_t bindingIndex) -> void {
-    glBindBufferBase(GL_UNIFORM_BUFFER, bindingIndex, buffer);
-}
-
-auto SPipeline::BindBufferAsShaderStorageBuffer(uint32_t buffer, int32_t bindingIndex) -> void {
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, buffer);
-}
-
-auto SPipeline::BindTexture(int32_t bindingIndex, uint32_t texture) -> void {
-    glBindTextureUnit(bindingIndex, texture);
-}
-
-auto SPipeline::BindTextureAndSampler(int32_t bindingIndex, uint32_t texture, uint32_t sampler) -> void {
-    glBindTextureUnit(bindingIndex, texture);
-    glBindSampler(bindingIndex, sampler);
-}
-
-auto SPipeline::SetUniform(int32_t location, float value) -> void {
-    glProgramUniform1f(Id, location, value);
-}
-
-auto SPipeline::SetUniform(int32_t location, int32_t value) -> void {
-    glProgramUniform1i(Id, location, value);
-}
-
-auto SPipeline::SetUniform(int32_t location, uint32_t value) -> void {
-    glProgramUniform1ui(Id, location, value);
-}
-
-auto SPipeline::SetUniform(int32_t location, uint64_t value) -> void {
-    glProgramUniformHandleui64ARB(Id, location, value);
-}
-
-auto SPipeline::SetUniform(int32_t location, const glm::vec2& value) -> void {
-    glProgramUniform2fv(Id, location, 1, glm::value_ptr(value));
-}
-
-auto SPipeline::SetUniform(int32_t location, const glm::vec3& value) -> void {
-    glProgramUniform3fv(Id, location, 1, glm::value_ptr(value));
-}
-
-auto SPipeline::SetUniform(int32_t location, float value1, float value2, float value3, float value4) -> void {
-    glProgramUniform4f(Id, location, value1, value2, value3, value4);
-}
-
-auto SPipeline::SetUniform(int32_t location, int32_t value1, int32_t value2, int32_t value3, int32_t value4) -> void {
-    glProgramUniform4i(Id, location, value1, value2, value3, value4);
-}
-
-auto SPipeline::SetUniform(int32_t location, const glm::vec4 value) -> void {
-    glProgramUniform4fv(Id, location, 1, glm::value_ptr(value));
-}
-
-auto SPipeline::SetUniform(int32_t location, const glm::mat4& value) -> void {
-    glProgramUniformMatrix4fv(Id, location, 1, GL_FALSE, glm::value_ptr(value));
-}
-
-auto SGraphicsPipeline::Bind() -> void {
-    SPipeline::Bind();
-    glBindVertexArray(InputLayout.has_value() ? *InputLayout : g_defaultInputLayout);
-}
-
-auto SGraphicsPipeline::BindBufferAsVertexBuffer(uint32_t buffer, uint32_t bindingIndex, size_t offset,
-                                                 size_t stride) -> void {
-
-    if (InputLayout.has_value()) {
-        glVertexArrayVertexBuffer(*InputLayout, bindingIndex, buffer, offset, stride);
-    }
-}
-
-auto SGraphicsPipeline::DrawArrays(int32_t vertexOffset, size_t vertexCount) -> void {
-
-    glDrawArrays(PrimitiveTopology, vertexOffset, vertexCount);
-}
-
-auto SGraphicsPipeline::DrawElements(uint32_t indexBuffer, size_t elementCount) -> void {
-
-    if (g_lastIndexBuffer != indexBuffer) {
-        glVertexArrayElementBuffer(InputLayout.has_value() ? InputLayout.value() : g_defaultInputLayout, indexBuffer);
-        g_lastIndexBuffer = indexBuffer;
-    }
-
-    glDrawElements(PrimitiveTopology, elementCount, GL_UNSIGNED_INT, nullptr);
-}
-
-auto SGraphicsPipeline::DrawElementsInstanced(uint32_t indexBuffer, size_t elementCount, size_t instanceCount) -> void {
-
-    if (g_lastIndexBuffer != indexBuffer) {
-        glVertexArrayElementBuffer(InputLayout.has_value() ? InputLayout.value() : g_defaultInputLayout, indexBuffer);
-        g_lastIndexBuffer = indexBuffer;
-    }
-
-    glDrawElementsInstanced(PrimitiveTopology, elementCount, GL_UNSIGNED_INT, nullptr, instanceCount);
-}
-
-auto SetDebugLabel(
-    const uint32_t object,
-    const uint32_t objectType,
-    const std::string_view label) -> void {
-
-    glObjectLabel(objectType, object, static_cast<GLsizei>(label.size()), label.data());
-}
-
-auto PushDebugGroup(const std::string_view label) -> void {
-    glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0, label.size(), label.data());
-}
-
-auto PopDebugGroup() -> void {
-    glPopDebugGroup();
-}
-
 auto CreateBuffer(std::string_view label,
                   size_t sizeInBytes,
                   const void* data,
@@ -1607,4 +2003,435 @@ auto UpdateBuffer(uint32_t buffer,
 auto DeleteBuffer(uint32_t buffer) -> void {
 
     glDeleteBuffers(1, &buffer);
+}
+
+// Renderer /////////////////////////////////////////////////
+
+struct SComponentGpuMesh {
+    std::string Mesh;
+};
+
+struct SComponentGpuMaterial {
+    std::string Material;
+};
+
+glm::ivec2 g_scaledFramebufferSize = {};
+
+SFramebuffer g_geometryFramebuffer = {};
+SGraphicsPipeline g_geometryGraphicsPipeline = {};
+std::vector<SGpuGlobalLight> g_gpuGlobalLights;
+
+bool g_drawDebugLines = true;
+std::vector<SDebugLine> g_debugLines;
+uint32_t g_debugInputLayout = 0;
+uint32_t g_debugLinesVertexBuffer = 0;
+SGraphicsPipeline g_debugLinesGraphicsPipeline = {};
+
+SGraphicsPipeline g_fullscreenTriangleGraphicsPipeline = {};
+SSampler g_fullscreenSamplerNearestClampToEdge = {};
+
+SGpuGlobalUniforms g_globalUniforms = {};
+uint32_t g_globalUniformsBuffer = 0;
+
+uint32_t g_objectsBuffer = 0;
+
+auto DrawFullscreenTriangleWithTexture(const STexture& texture) -> void {
+
+    g_fullscreenTriangleGraphicsPipeline.Bind();
+    g_fullscreenTriangleGraphicsPipeline.BindTextureAndSampler(0, texture.Id, g_fullscreenSamplerNearestClampToEdge.Id);
+    g_fullscreenTriangleGraphicsPipeline.DrawArrays(0, 3);
+}
+
+auto LoadRenderer() -> bool {
+
+    glCreateVertexArrays(1, &g_defaultInputLayout);
+    SetDebugLabel(g_defaultInputLayout, GL_VERTEX_ARRAY, "InputLayout-Default");
+
+    auto geometryGraphicsPipelineResult = CreateGraphicsPipeline({
+                                                                     .Label = "GeometryPipeline",
+                                                                     .VertexShaderFilePath = "data/shaders/Simple.vs.glsl",
+                                                                     .FragmentShaderFilePath = "data/shaders/Simple.fs.glsl",
+                                                                     .InputAssembly = {
+                                                                         .PrimitiveTopology = EPrimitiveTopology::Triangles
+                                                                     },
+                                                                 });
+    if (!geometryGraphicsPipelineResult) {
+        spdlog::error(geometryGraphicsPipelineResult.error());
+        return false;
+    }
+    g_geometryGraphicsPipeline = *geometryGraphicsPipelineResult;
+
+    auto fullscreenTriangleGraphicsPipelineResult = CreateGraphicsPipeline({
+                                                                               .Label = "FullscreenTrianglePipeline",
+                                                                               .VertexShaderFilePath = "data/shaders/FST.vs.glsl",
+                                                                               .FragmentShaderFilePath = "data/shaders/FST.GammaCorrected.fs.glsl",
+                                                                               .InputAssembly = {
+                                                                                   .PrimitiveTopology = EPrimitiveTopology::Triangles
+                                                                               },
+                                                                           });
+
+    if (!fullscreenTriangleGraphicsPipelineResult) {
+        spdlog::error(fullscreenTriangleGraphicsPipelineResult.error());
+        return false;
+    }
+    g_fullscreenTriangleGraphicsPipeline = *fullscreenTriangleGraphicsPipelineResult;
+
+    auto debugLinesGraphicsPipelineResult = CreateGraphicsPipeline({
+                                                                       .Label = "DebugLinesPipeline",
+                                                                       .VertexShaderFilePath = "data/shaders/DebugLines.vs.glsl",
+                                                                       .FragmentShaderFilePath = "data/shaders/DebugLines.fs.glsl",
+                                                                       .InputAssembly = {
+                                                                           .PrimitiveTopology = EPrimitiveTopology::Lines,
+                                                                           .IsPrimitiveRestartEnabled = false,
+                                                                       },
+                                                                       .VertexInput = SVertexInputDescriptor{
+                                                                           .VertexInputAttributes = {
+                                                                               SVertexInputAttributeDescriptor{
+                                                                                   .Location = 0,
+                                                                                   .Binding = 0,
+                                                                                   .Format = EFormat::R32G32B32_FLOAT,
+                                                                                   .Offset = offsetof(SDebugLine, StartPosition),
+                                                                               },
+                                                                               SVertexInputAttributeDescriptor{
+                                                                                   .Location = 1,
+                                                                                   .Binding = 0,
+                                                                                   .Format = EFormat::R32G32B32A32_FLOAT,
+                                                                                   .Offset = offsetof(SDebugLine, StartColor),
+                                                                               },
+                                                                           }
+                                                                       }
+                                                                   });
+
+    if (!debugLinesGraphicsPipelineResult) {
+        spdlog::error(debugLinesGraphicsPipelineResult.error());
+        return false;
+    }
+
+    g_debugLinesGraphicsPipeline = *debugLinesGraphicsPipelineResult;
+    g_debugLinesVertexBuffer = CreateBuffer("VertexBuffer-DebugLines", sizeof(SDebugLine) * 16384, nullptr, GL_DYNAMIC_STORAGE_BIT);
+
+    g_globalUniformsBuffer = CreateBuffer("SGpuGlobalUniforms", sizeof(SGpuGlobalUniforms), &g_globalUniforms, GL_DYNAMIC_STORAGE_BIT);
+    g_objectsBuffer = CreateBuffer("SGpuObjects", sizeof(SGpuObject) * 16384, nullptr, GL_DYNAMIC_STORAGE_BIT);
+
+
+    return true;
+}
+
+auto UnloadRenderer() -> void {
+    glDeleteVertexArrays(1, &g_defaultInputLayout);
+    DeleteBuffer(g_debugLinesVertexBuffer);
+    DeleteFramebuffer(g_geometryFramebuffer);
+    DeletePipeline(g_geometryGraphicsPipeline);
+    DeletePipeline(g_debugLinesGraphicsPipeline);
+}
+
+auto DeleteRendererFramebuffers() -> void {
+
+    DeleteFramebuffer(g_geometryFramebuffer);
+}
+
+auto CreateRendererFramebuffers(const glm::vec2& scaledFramebufferSize) -> void {
+
+    g_geometryFramebuffer = CreateFramebuffer({
+                                                  .Label = "Geometry",
+                                                  .ColorAttachments = {
+                                                      SFramebufferColorAttachmentDescriptor{
+                                                          .Label = "GeometryAlbedo",
+                                                          .Format = EFormat::R8G8B8A8_SRGB,
+                                                          .Extent = SExtent2D(scaledFramebufferSize.x, scaledFramebufferSize.y),
+                                                          .LoadOperation = EFramebufferAttachmentLoadOperation::Clear,
+                                                          .ClearColor = { 0.1f, 0.1f, 0.2f, 1.0f },
+                                                      },
+                                                      SFramebufferColorAttachmentDescriptor{
+                                                          .Label = "GeometryNormals",
+                                                          .Format = EFormat::R32G32B32A32_FLOAT,
+                                                          .Extent = SExtent2D(scaledFramebufferSize.x, scaledFramebufferSize.y),
+                                                          .LoadOperation = EFramebufferAttachmentLoadOperation::Clear,
+                                                          .ClearColor = { 0.0f, 0.0f, 0.0f, 1.0f },
+                                                      },
+                                                  },
+                                                  .DepthStencilAttachment = SFramebufferDepthStencilAttachmentDescriptor{
+                                                      .Label = "GeometryDepth",
+                                                      .Format = EFormat::D24_UNORM_S8_UINT,
+                                                      .Extent = SExtent2D(scaledFramebufferSize.x, scaledFramebufferSize.y),
+                                                      .LoadOperation = EFramebufferAttachmentLoadOperation::Clear,
+                                                      .ClearDepthStencil = { 1.0f, 0 },
+                                                  }
+                                              });
+}
+
+auto CreateGpuMesh(const std::string& assetMeshName) -> void {
+
+    auto& assetMesh = GetAssetMesh(assetMeshName);
+
+    uint32_t buffers[3] = {};
+    {
+        glCreateBuffers(3, buffers);
+
+        SetDebugLabel(buffers[0], GL_BUFFER, std::format("{}_SGpuVertexPosition", assetMeshName));
+        SetDebugLabel(buffers[1], GL_BUFFER, std::format("{}_SGpuVertexNormalUvTangent", assetMeshName));
+        SetDebugLabel(buffers[2], GL_BUFFER, std::format("{}_Indices", assetMeshName));
+
+        glNamedBufferStorage(buffers[0], sizeof(SGpuVertexPosition) * assetMesh.VertexPositions.size(),
+                             assetMesh.VertexPositions.data(), 0);
+        glNamedBufferStorage(buffers[1], sizeof(SGpuVertexNormalUvTangent) * assetMesh.VertexNormalUvTangents.size(),
+                             assetMesh.VertexNormalUvTangents.data(), 0);
+        glNamedBufferStorage(buffers[2], sizeof(uint32_t) * assetMesh.Indices.size(), assetMesh.Indices.data(), 0);
+    }
+
+    auto gpuMesh = SGpuMesh{
+        .Name = assetMesh.Name,
+        .VertexPositionBuffer = buffers[0],
+        .VertexNormalUvTangentBuffer = buffers[1],
+        .IndexBuffer = buffers[2],
+
+        .VertexCount = assetMesh.VertexPositions.size(),
+        .IndexCount = assetMesh.Indices.size(),
+
+        .InitialTransform = assetMesh.InitialTransform,
+    };
+
+    {
+        g_gpuMeshes[assetMeshName] = gpuMesh;
+    }
+}
+
+auto GetGpuMesh(const std::string& assetMeshName) -> SGpuMesh& {
+    assert(!assetMeshName.empty() && g_gpuMeshes.contains(assetMeshName));
+
+    return g_gpuMeshes[assetMeshName];
+}
+
+auto GetGpuMaterial(const std::string& assetMaterialName) -> SGpuMaterial& {
+    assert(!assetMaterialName.empty() && g_gpuMaterials.contains(assetMaterialName));
+
+    return g_gpuMaterials[assetMaterialName];
+}
+
+auto CreateTextureForMaterialChannel(SAssetMaterialChannel& assetMaterialChannel) -> int64_t {
+
+    auto& image = GetAssetImage(assetMaterialChannel.Image);
+
+    auto textureId = CreateTexture(SCreateTextureDescriptor{
+        .TextureType = ETextureType::Texture2D,
+        .Format = EFormat::R8G8B8A8_UNORM,
+        .Extent = SExtent3D{static_cast<uint32_t>(image.Width), static_cast<uint32_t>(image.Height), 1u},
+        .MipMapLevels = static_cast<uint32_t>(glm::floor(glm::log2(glm::max(static_cast<float>(image.Width), static_cast<float>(image.Height))))),
+        .Layers = 1,
+        .SampleCount = ESampleCount::One,
+        .Label = image.Name,
+    });
+
+    UploadTexture(textureId, SUploadTextureDescriptor{
+        .Level = 0,
+        .Offset = SOffset3D{0, 0, 0},
+        .Extent = SExtent3D{static_cast<uint32_t>(image.Width), static_cast<uint32_t>(image.Height), 1u},
+        .UploadFormat = EUploadFormat::Auto,
+        .UploadType = EUploadType::Auto,
+        .PixelData = image.DecodedData.get()
+    });
+
+    GenerateMipmaps(textureId);
+
+    //auto& sampler = GetAssetSampler(assetMaterialChannel.Sampler);
+
+    return MakeTextureResident(textureId);
+}
+
+auto CreateGpuMaterial(const std::string& assetMaterialName) -> void {
+
+    auto& assetMaterial = GetAssetMaterial(assetMaterialName);
+    uint64_t baseColorTexture = assetMaterial.BaseColorChannel.has_value()
+                                ? CreateTextureForMaterialChannel(assetMaterial.BaseColorChannel.value())
+                                : 0;
+
+    uint64_t normalTexture = assetMaterial.NormalsChannel.has_value()
+                             ? CreateTextureForMaterialChannel(assetMaterial.NormalsChannel.value())
+                             : 0;
+
+    auto gpuMaterial = SGpuMaterial{
+        .BaseColor = assetMaterial.BaseColorFactor,
+        .BaseColorTexture = baseColorTexture,
+        .NormalTexture = normalTexture,
+    };
+
+    g_gpuMaterials[assetMaterialName] = gpuMaterial;
+}
+
+auto ResizeFramebuffersIfNecessary(const SApplicationSettings& applicationSettings) -> void {
+
+    if (g_applicationContext.WindowFramebufferResized || g_applicationContext.SceneViewerResized) {
+
+        g_applicationContext.WindowFramebufferScaledSize = glm::ivec2{g_applicationContext.WindowFramebufferSize.x * applicationSettings.ResolutionScale,
+                                                                      g_applicationContext.WindowFramebufferSize.y * applicationSettings.ResolutionScale};
+        g_applicationContext.SceneViewerScaledSize = glm::ivec2{g_applicationContext.SceneViewerSize.x * applicationSettings.ResolutionScale,
+                                                                g_applicationContext.SceneViewerSize.y * applicationSettings.ResolutionScale};
+
+        if (g_applicationContext.IsEditor) {
+            g_scaledFramebufferSize = g_applicationContext.SceneViewerScaledSize;
+        } else {
+            g_scaledFramebufferSize = g_applicationContext.WindowFramebufferScaledSize;
+        }
+
+        if (g_applicationContext.FrameCounter > 0) {
+            DeleteRendererFramebuffers();
+            if (g_scaledFramebufferSize.x + g_scaledFramebufferSize.y <= glm::epsilon<float>()) {
+                g_scaledFramebufferSize = g_applicationContext.WindowFramebufferScaledSize;
+            }
+        }
+        CreateRendererFramebuffers(g_scaledFramebufferSize);
+
+        glViewport(0, 0, g_scaledFramebufferSize.x, g_scaledFramebufferSize.y);
+
+        g_applicationContext.WindowFramebufferResized = false;
+        g_applicationContext.SceneViewerResized = false;
+    }
+}
+
+auto Render(entt::registry& registry, float deltaTime, SCamera& camera) -> void {
+
+    if (g_drawDebugLines) {
+        g_debugLines.clear();
+
+        g_debugLines.push_back(SDebugLine{
+            .StartPosition = glm::vec3{-150, 30, 4},
+            .StartColor = glm::vec4{0.3f, 0.95f, 0.1f, 1.0f},
+            .EndPosition = glm::vec3{150, -40, -4},
+            .EndColor = glm::vec4{0.6f, 0.1f, 0.0f, 1.0f}
+        });
+    }
+
+    ///////////////////////
+    // Create Gpu Resources if necessary
+    ///////////////////////
+    auto createGpuResourcesNecessaryView = registry.view<SComponentCreateGpuResources>();
+    for (auto& entity : createGpuResourcesNecessaryView) {
+
+        auto& meshComponent = registry.get<SComponentMesh>(entity);
+        auto& materialComponent = registry.get<SComponentMaterial>(entity);
+
+        CreateGpuMesh(meshComponent.Mesh);
+        CreateGpuMaterial(materialComponent.Material);
+
+        registry.emplace<SComponentGpuMesh>(entity, meshComponent.Mesh);
+        registry.emplace<SComponentGpuMaterial>(entity, materialComponent.Material);
+
+        registry.remove<SComponentCreateGpuResources>(entity);
+    }
+
+    g_globalUniforms.ProjectionMatrix = glm::infinitePerspective(glm::radians(60.0f), (float)g_scaledFramebufferSize.x / (float)g_scaledFramebufferSize.y, 0.1f);
+    g_globalUniforms.ViewMatrix = camera.GetViewMatrix();
+    g_globalUniforms.CameraPosition = glm::vec4(camera.Position, 0.0f);
+    UpdateBuffer(g_globalUniformsBuffer, 0, sizeof(SGpuGlobalUniforms), &g_globalUniforms);
+
+    g_geometryGraphicsPipeline.Bind();
+    BindFramebuffer(g_geometryFramebuffer);
+
+    g_geometryGraphicsPipeline.BindBufferAsUniformBuffer(g_globalUniformsBuffer, 0);
+
+    auto renderablesView = registry.view<SComponentGpuMesh, SComponentGpuMaterial, SComponentTransform>();
+    renderablesView.each([](const auto& meshComponent, const auto& materialComponent, auto& initialTransform) {
+
+        auto& gpuMaterial = GetGpuMaterial(materialComponent.Material);
+        auto& gpuMesh = GetGpuMesh(meshComponent.Mesh);
+
+        //glBindSampler(1, g_fullscreenSamplerNearestClampToEdge.Id);
+
+        g_geometryGraphicsPipeline.BindBufferAsShaderStorageBuffer(gpuMesh.VertexPositionBuffer, 1);
+        g_geometryGraphicsPipeline.BindBufferAsShaderStorageBuffer(gpuMesh.VertexNormalUvTangentBuffer, 2);
+        g_geometryGraphicsPipeline.SetUniform(0, initialTransform * gpuMesh.InitialTransform);
+        g_geometryGraphicsPipeline.SetUniform(8, gpuMaterial.BaseColorTexture);
+        g_geometryGraphicsPipeline.SetUniform(9, gpuMaterial.NormalTexture);
+
+        g_geometryGraphicsPipeline.DrawElements(gpuMesh.IndexBuffer, gpuMesh.IndexCount);
+
+    });
+
+    if (g_drawDebugLines && !g_debugLines.empty()) {
+
+        PushDebugGroup("Debug Lines");
+        glDisable(GL_CULL_FACE);
+
+        UpdateBuffer(g_debugLinesVertexBuffer, 0, sizeof(SDebugLine) * g_debugLines.size(), g_debugLines.data());
+
+        g_debugLinesGraphicsPipeline.Bind();
+        g_debugLinesGraphicsPipeline.BindBufferAsVertexBuffer(g_debugLinesVertexBuffer, 0, 0, sizeof(SDebugLine) / 2);
+        g_debugLinesGraphicsPipeline.BindBufferAsUniformBuffer(g_globalUniformsBuffer, 0);
+        g_debugLinesGraphicsPipeline.DrawArrays(0, static_cast<int32_t>(g_debugLines.size() * 2));
+
+        glEnable(GL_CULL_FACE);
+        PopDebugGroup();
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (!g_applicationContext.IsEditor) {
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        g_fullscreenTriangleGraphicsPipeline.Bind();
+        DrawFullscreenTriangleWithTexture(g_geometryFramebuffer.ColorAttachments[0].value().Texture);
+    }
+}
+
+auto RenderUi(entt::registry& registry, float deltaTime) -> void {
+
+    if (!g_applicationContext.IsEditor) {
+        ImGui::SetNextWindowPos({32, 32});
+        ImGui::SetNextWindowSize({168, 152});
+        auto windowBackgroundColor = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+        windowBackgroundColor.w = 0.4f;
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, windowBackgroundColor);
+        if (ImGui::Begin("#InGameStatistics", nullptr, ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoDecoration)) {
+
+            ImGui::TextColored(ImVec4{0.9f, 0.7f, 0.0f, 1.0f}, "F1 to toggle editor");
+            ImGui::SeparatorText("Frame Statistics");
+
+            auto framesPerSecond = 1.0f / deltaTime;
+            ImGui::Text("afps: %.0f rad/s", glm::two_pi<float>() * framesPerSecond);
+            ImGui::Text("dfps: %.0f °/s", glm::degrees(glm::two_pi<float>() * framesPerSecond));
+            ImGui::Text("rfps: %.0f", framesPerSecond);
+            ImGui::Text("rpms: %.0f", framesPerSecond * 60.0f);
+            ImGui::Text("  ft: %.2f ms", deltaTime * 1000.0f);
+            ImGui::Text("   f: %lu", g_applicationContext.FrameCounter);
+        }
+        ImGui::End();
+        ImGui::PopStyleColor();
+    }
+
+    if (g_applicationContext.IsEditor) {
+        ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
+
+        if (ImGui::BeginMainMenuBar()) {
+            //ImGui::Image(reinterpret_cast<ImTextureID>(g_iconPackageGreen), ImVec2(16, 16), g_imvec2UnitY, g_imvec2UnitX);
+            ImGui::SetCursorPosX(20.0f);
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Quit")) {
+
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+
+        // Scene Viewer
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        if (ImGui::Begin("Scene")) {
+            auto availableSceneWindowSize = ImGui::GetContentRegionAvail();
+            if (availableSceneWindowSize.x != g_applicationContext.SceneViewerSize.x || availableSceneWindowSize.y != g_applicationContext.SceneViewerSize.y) {
+                g_applicationContext.SceneViewerSize = glm::ivec2(availableSceneWindowSize.x, availableSceneWindowSize.y);
+                g_applicationContext.SceneViewerResized = true;
+            }
+
+            auto texture = g_geometryFramebuffer.ColorAttachments[0].value().Texture.Id;
+            auto imagePosition = ImGui::GetCursorPos();
+            ImGui::Image(reinterpret_cast<ImTextureID>(texture), availableSceneWindowSize, g_imvec2UnitY, g_imvec2UnitX);
+            ImGui::SetCursorPos(imagePosition);
+            if (ImGui::BeginChild(1, ImVec2{192, -1})) {
+                if (ImGui::CollapsingHeader("Statistics")) {
+                    ImGui::Text("Text");
+                }
+            }
+            ImGui::EndChild();
+        }
+        ImGui::PopStyleVar();
+        ImGui::End();
+    }
 }

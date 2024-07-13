@@ -1,9 +1,9 @@
 #include <Hephaestus/Application.hpp>
-#include <Hephaestus/VectorMath.hpp>
+#include <Hephaestus/Input.hpp>
 
 #include <thread>
 
-#include <spdlog/spdlog.h>
+//#include <spdlog/spdlog.h>
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -17,12 +17,116 @@
 
 // Application
 
-const glm::vec3 g_unitX = glm::vec3{1.0f, 0.0f, 0.0f};
-const glm::vec3 g_unitY = glm::vec3{0.0f, 1.0f, 0.0f};
-const glm::vec3 g_unitZ = glm::vec3{0.0f, 0.0f, 1.0f};
-
 ImGuiContext* g_imguiContext = nullptr;
 GLFWwindow* g_window = nullptr;
+
+constexpr auto GlfwKeyToKey(int32_t glfwKey) -> EKey {
+    switch (glfwKey) {
+        case GLFW_KEY_ESCAPE: return EKey::KeyEscape;
+        case GLFW_KEY_F1: return EKey::KeyF1;
+        case GLFW_KEY_F2: return EKey::KeyF2;
+        case GLFW_KEY_F3: return EKey::KeyF3;
+        case GLFW_KEY_F4: return EKey::KeyF4;
+        case GLFW_KEY_F5: return EKey::KeyF5;
+        case GLFW_KEY_F6: return EKey::KeyF6;
+        case GLFW_KEY_F7: return EKey::KeyF7;
+        case GLFW_KEY_F8: return EKey::KeyF8;
+        case GLFW_KEY_F9: return EKey::KeyF9;
+        case GLFW_KEY_F10: return EKey::KeyF10;
+        case GLFW_KEY_F11: return EKey::KeyF11;
+        case GLFW_KEY_F12: return EKey::KeyF12;
+        case GLFW_KEY_PRINT_SCREEN: return EKey::KeyPrint;
+        case GLFW_KEY_SCROLL_LOCK: return EKey::KeyScrollLock;
+        case GLFW_KEY_PAUSE: return EKey::KeyPause;
+
+        case GLFW_KEY_GRAVE_ACCENT: return EKey::KeyGraveAccent;
+        case GLFW_KEY_1: return EKey::Key1;
+        case GLFW_KEY_2: return EKey::Key2;
+        case GLFW_KEY_3: return EKey::Key3;
+        case GLFW_KEY_4: return EKey::Key4;
+        case GLFW_KEY_5: return EKey::Key5;
+        case GLFW_KEY_6: return EKey::Key6;
+        case GLFW_KEY_7: return EKey::Key7;
+        case GLFW_KEY_8: return EKey::Key8;
+        case GLFW_KEY_9: return EKey::Key9;
+        case GLFW_KEY_0: return EKey::Key0;
+        case GLFW_KEY_MINUS: return EKey::KeyMinus;
+        case GLFW_KEY_EQUAL: return EKey::KeyEqual;
+        case GLFW_KEY_BACKSPACE: return EKey::KeyBackspace;
+
+        case GLFW_KEY_TAB: return EKey::KeyTab;
+        case GLFW_KEY_Q: return EKey::KeyQ;
+        case GLFW_KEY_W: return EKey::KeyW;
+        case GLFW_KEY_E: return EKey::KeyE;
+        case GLFW_KEY_R: return EKey::KeyR;
+        case GLFW_KEY_T: return EKey::KeyT;
+        case GLFW_KEY_Y: return EKey::KeyY;
+        case GLFW_KEY_U: return EKey::KeyU;
+        case GLFW_KEY_I: return EKey::KeyI;
+        case GLFW_KEY_O: return EKey::KeyO;
+        case GLFW_KEY_P: return EKey::KeyP;
+        case GLFW_KEY_LEFT_BRACKET: return EKey::KeyLeftBracket;
+        case GLFW_KEY_RIGHT_BRACKET: return EKey::KeyRightBracket;
+
+        case GLFW_KEY_CAPS_LOCK: return EKey::KeyCapsLock;
+        case GLFW_KEY_A: return EKey::KeyA;
+        case GLFW_KEY_S: return EKey::KeyS;
+        case GLFW_KEY_D: return EKey::KeyD;
+        case GLFW_KEY_F: return EKey::KeyF;
+        case GLFW_KEY_G: return EKey::KeyG;
+        case GLFW_KEY_H: return EKey::KeyH;
+        case GLFW_KEY_J: return EKey::KeyJ;
+        case GLFW_KEY_K: return EKey::KeyK;
+        case GLFW_KEY_L: return EKey::KeyL;
+        case GLFW_KEY_SEMICOLON: return EKey::KeySemicolon;
+        case GLFW_KEY_APOSTROPHE: return EKey::KeyApostrophe;
+        case GLFW_KEY_ENTER: return EKey::KeyEnter;
+
+        case GLFW_KEY_LEFT_SHIFT: return EKey::KeyLeftShift;
+        case GLFW_KEY_Z: return EKey::KeyL;
+        case GLFW_KEY_X: return EKey::KeyL;
+        case GLFW_KEY_C: return EKey::KeyL;
+        case GLFW_KEY_V: return EKey::KeyL;
+        case GLFW_KEY_B: return EKey::KeyL;
+        case GLFW_KEY_N: return EKey::KeyL;
+        case GLFW_KEY_M: return EKey::KeyL;
+        case GLFW_KEY_COMMA: return EKey::KeyComma;
+        case GLFW_KEY_PERIOD: return EKey::KeyPeriod;
+        case GLFW_KEY_SLASH: return EKey::KeySlash;
+        case GLFW_KEY_RIGHT_SHIFT: return EKey::KeyRightShift;
+
+        case GLFW_KEY_LEFT_CONTROL: return EKey::KeyLeftControl;
+        case GLFW_KEY_LEFT_SUPER: return EKey::KeyLeftMeta;
+        case GLFW_KEY_LEFT_ALT: return EKey::KeyLeftAlt;
+        case GLFW_KEY_SPACE: return EKey::KeySpace;
+        case GLFW_KEY_RIGHT_ALT: return EKey::KeyRightAlt;
+        case GLFW_KEY_RIGHT_SUPER: return EKey::KeyRightMeta;
+        case GLFW_KEY_RIGHT_CONTROL: return EKey::KeyRightControl;
+
+        default: return EKey::KeyNone;
+    }
+}
+
+constexpr auto GlfwMouseButtonToMouseButton(int32_t button) -> EMouseButton {
+    switch (button) {
+        case GLFW_MOUSE_BUTTON_1: return EMouseButton::Left;
+        case GLFW_MOUSE_BUTTON_2: return EMouseButton::Right;
+        case GLFW_MOUSE_BUTTON_3: return EMouseButton::Middle;
+        default: return EMouseButton::None;
+    }
+}
+
+constexpr auto GlfwGamepadButtonToGamepadButton(int32_t gamepadButton) -> EGamepadButton {
+    switch (gamepadButton) {
+        case GLFW_GAMEPAD_BUTTON_A: return EGamepadButton::ButtonA;
+        case GLFW_GAMEPAD_BUTTON_B: return EGamepadButton::ButtonB;
+        case GLFW_GAMEPAD_BUTTON_X: return EGamepadButton::ButtonX;
+        case GLFW_GAMEPAD_BUTTON_Y: return EGamepadButton::ButtonY;
+
+        case GLFW_GAMEPAD_BUTTON_BACK: return EGamepadButton::ButtonBack;
+        default: return EGamepadButton::None;
+    }
+}
 
 auto OnWindowKey(
         GLFWwindow* window,
@@ -30,6 +134,8 @@ auto OnWindowKey(
         [[maybe_unused]] int32_t scancode,
         const int32_t action,
         [[maybe_unused]] int32_t mods) -> void {
+
+    auto& inputState = GetInputState();
 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -39,6 +145,20 @@ auto OnWindowKey(
         g_applicationContext.WindowFramebufferResized = !g_applicationContext.IsEditor;
         g_applicationContext.SceneViewerResized = g_applicationContext.IsEditor;
     }
+
+    if (action == GLFW_PRESS || action == GLFW_RELEASE) {
+        inputState.Keyboard.SetKey(GlfwKeyToKey(key), action != GLFW_RELEASE);
+    }
+}
+
+auto OnWindowMouseButton(
+    [[maybe_unused]] GLFWwindow* window,
+    int32_t button,
+    int32_t action,
+    [[maybe_unused]] int32_t modifier) -> void {
+
+    auto& inputState = GetInputState();
+    inputState.Mouse.SetButton(GlfwMouseButtonToMouseButton(button), action == GLFW_PRESS || action == GLFW_REPEAT);
 }
 
 auto OnWindowCursorEntered(
@@ -57,16 +177,25 @@ auto OnWindowCursorPosition(
         double cursorPositionX,
         double cursorPositionY) -> void {
 
+    static double lastCursorPositionX = cursorPositionX;
+    static double lastCursorPositionY = cursorPositionY;
+
+    auto& inputState = GetInputState();
+
     if (g_applicationContext.CursorJustEntered)
     {
-        g_applicationContext.CursorPosition = {cursorPositionX, cursorPositionY};
+        inputState.Mouse.SetDeltaCursorPosition(
+            static_cast<float>(cursorPositionX),
+            static_cast<float>(cursorPositionY));
         g_applicationContext.CursorJustEntered = false;
     }
 
-    g_applicationContext.CursorFrameOffset += glm::dvec2{
-            cursorPositionX - g_applicationContext.CursorPosition.x,
-            g_applicationContext.CursorPosition.y - cursorPositionY};
-    g_applicationContext.CursorPosition = {cursorPositionX, cursorPositionY};
+    inputState.Mouse.SetDeltaCursorPosition(
+        static_cast<float>(cursorPositionX - lastCursorPositionX),
+        static_cast<float>(lastCursorPositionY - cursorPositionY));
+
+    lastCursorPositionX = cursorPositionX;
+    lastCursorPositionY = cursorPositionY;
 }
 
 auto OnWindowFramebufferSizeChanged(
@@ -149,6 +278,7 @@ auto InternalApplicationInitialize(const SApplicationSettings& applicationSettin
     }
 
     glfwSetKeyCallback(g_window, OnWindowKey);
+    glfwSetMouseButtonCallback(g_window, OnWindowMouseButton);
     glfwSetCursorPosCallback(g_window, OnWindowCursorPosition);
     glfwSetCursorEnterCallback(g_window, OnWindowCursorEntered);
     glfwSetFramebufferSizeCallback(g_window, OnWindowFramebufferSizeChanged);
@@ -247,6 +377,12 @@ auto RunApplication(const SApplicationSettings& applicationSettings,
         previousTimeInSeconds = currentTimeInSeconds;
         currentTimeInSeconds = glfwGetTime();
 
+        glfwSetInputMode(g_window, GLFW_CURSOR, g_applicationContext.CursorIsActive ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+        if (!g_applicationContext.CursorIsActive) {
+            glfwSetCursorPos(g_window, 0, 0);
+            g_applicationContext.CursorPosition = {0.0, 0.0};
+        }
+
         auto deltaTime = static_cast<float>(deltaTimeInSeconds);
         applicationUpdate(registry, deltaTime);
 
@@ -256,8 +392,6 @@ auto RunApplication(const SApplicationSettings& applicationSettings,
         }
 
         applicationRender(registry, deltaTime);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();

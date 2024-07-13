@@ -5,9 +5,9 @@ auto main([[maybe_unused]] int32_t argc,
 
     RunGame({
         .ResolutionWidth = 1920,
-        .ResolutionHeight = 1080,
+        .ResolutionHeight = 720,
         .ResolutionScale = 1.0f,
-        .ResolutionStartup = EResolutionStartup::NinetyPercentOfScreenSize,
+        .ResolutionStartup = EResolutionStartup::UseApplicationSettings,
         .WindowStyle = EWindowStyle::Windowed,
         .IsDebug = true,
         .IsVSyncEnabled = true,

@@ -1,58 +1,146 @@
 #include <Hephaestus/Game.hpp>
-#include <Hephaestus/RHI.hpp>
-#include <entt/entt.hpp>
+#include <Hephaestus/Assets.hpp>
+#include <Hephaestus/CpuComponents.hpp>
+#include <Hephaestus/Input.hpp>
 
+#include <entt/entt.hpp>
 #include <glad/gl.h>
-#include <imgui.h>
 
 SApplicationSettings g_applicationSettings = {};
-SFramebuffer g_geometryFramebuffer = {};
+const glm::vec3 g_unitX = glm::vec3{1.0f, 0.0f, 0.0f};
+const glm::vec3 g_unitY = glm::vec3{0.0f, 1.0f, 0.0f};
+const glm::vec3 g_unitZ = glm::vec3{0.0f, 0.0f, 1.0f};
 
-glm::ivec2 g_scaledFramebufferSize = {};
-constexpr ImVec2 g_imvec2UnitX = ImVec2(1, 0);
-constexpr ImVec2 g_imvec2UnitY = ImVec2(0, 1);
+float g_cameraSpeed = 4.0f;
 
-auto DeleteRendererFramebuffers() -> void {
+auto AddEntity(
+    entt::registry& registry,
+    std::optional<entt::entity> parent,
+    const std::string& assetMeshName,
+    const std::string& assetMaterialName,
+    glm::mat4x4 initialTransform) -> entt::entity {
 
-    DeleteFramebuffer(g_geometryFramebuffer);
+    auto entityId = registry.create();
+    if (parent.has_value()) {
+        auto parentComponent = registry.get_or_emplace<SComponentParent>(parent.value());
+        parentComponent.Children.push_back(entityId);
+        registry.emplace<SComponentChildOf>(entityId, parent.value());
+    }
+    if (!assetMeshName.empty()) {
+        registry.emplace<SComponentMesh>(entityId, assetMeshName);
+    }
+    if (!assetMaterialName.empty()) {
+        registry.emplace<SComponentMaterial>(entityId, assetMaterialName);
+    }
+    registry.emplace<SComponentTransform>(entityId, initialTransform);
+    registry.emplace<SComponentCreateGpuResources>(entityId);
+
+    return entityId;
 }
 
-auto CreateRendererFramebuffers(const glm::vec2& scaledFramebufferSize) -> void {
+auto AddEntity(
+    entt::registry& registry,
+    std::optional<entt::entity> parent,
+    const std::string& modelName,
+    glm::mat4 initialTransform) -> entt::entity {
 
-    g_geometryFramebuffer = CreateFramebuffer({
-                                                  .Label = "Geometry",
-                                                  .ColorAttachments = {
-                                                      SFramebufferColorAttachmentDescriptor{
-                                                          .Label = "GeometryAlbedo",
-                                                          .Format = EFormat::R8G8B8A8_SRGB,
-                                                          .Extent = SExtent2D(scaledFramebufferSize.x, scaledFramebufferSize.y),
-                                                          .LoadOperation = EFramebufferAttachmentLoadOperation::Clear,
-                                                          .ClearColor = { 0.0f, 0.0f, 0.0f, 1.0f },
-                                                      },
-                                                      SFramebufferColorAttachmentDescriptor{
-                                                          .Label = "GeometryNormals",
-                                                          .Format = EFormat::R32G32B32A32_FLOAT,
-                                                          .Extent = SExtent2D(scaledFramebufferSize.x, scaledFramebufferSize.y),
-                                                          .LoadOperation = EFramebufferAttachmentLoadOperation::Clear,
-                                                          .ClearColor = { 0.0f, 0.0f, 0.0f, 1.0f },
-                                                      },
-                                                  },
-                                                  .DepthStencilAttachment = SFramebufferDepthStencilAttachmentDescriptor{
-                                                      .Label = "GeometryDepth",
-                                                      .Format = EFormat::D24_UNORM_S8_UINT,
-                                                      .Extent = SExtent2D(scaledFramebufferSize.x, scaledFramebufferSize.y),
-                                                      .LoadOperation = EFramebufferAttachmentLoadOperation::Clear,
-                                                      .ClearDepthStencil = { 1.0f, 0 },
-                                                  }
-                                              });
+    auto entityId = registry.create();
+    if (parent.has_value()) {
+        auto& parentComponent = registry.get_or_emplace<SComponentParent>(parent.value());
+        parentComponent.Children.push_back(entityId);
+
+        registry.emplace<SComponentChildOf>(entityId, parent.value());
+    }
+
+    auto& modelMeshesNames = GetAssetModelMeshNames(modelName);
+    for(auto& modelMeshName : modelMeshesNames) {
+
+        auto& assetMesh = GetAssetMesh(modelMeshName);
+
+        AddEntity(registry, entityId, modelMeshName, assetMesh.MaterialName, initialTransform);
+    }
+
+    return entityId;
 }
 
 auto GameLoad(entt::registry& registry) -> bool {
+
+    if (!LoadRenderer()) {
+        return false;
+    }
+
+    LoadModelFromFile("SM_Deccer_Cubes_Textured", "data/default/SM_Deccer_Cubes_Textured.glb");
+    LoadModelFromFile("SM_Asteroid1", "data/Asteroids/nasa1.glb");
+    LoadModelFromFile("SM_Asteroid2", "data/Asteroids/nasa2.glb");
+    LoadModelFromFile("SM_Asteroid3", "data/Asteroids/nasa3.glb");
+    LoadModelFromFile("SM_Asteroid4", "data/Asteroids/nasa4.glb");
+
+    AddEntity(registry, std::nullopt, "SM_Deccer_Cubes_Textured", glm::mat4(1.0f));
+
+    auto scale = glm::scale(glm::mat4(1.0f), glm::vec3{400.0f, 400.0f, 400.0f});
+    AddEntity(registry, std::nullopt, "SM_Asteroid1", glm::translate(glm::mat4(1.0f), glm::vec3{-20.0f, 0.0f, 20.0f}) * scale);
+    AddEntity(registry, std::nullopt, "SM_Asteroid2", glm::translate(glm::mat4(1.0f), glm::vec3{20.0f, 0.0f, -20.0f}) * scale);
+    AddEntity(registry, std::nullopt, "SM_Asteroid3", glm::translate(glm::mat4(1.0f), glm::vec3{-20.0f, 0.0f, 20.0f}) * scale);
+    AddEntity(registry, std::nullopt, "SM_Asteroid4", glm::translate(glm::mat4(1.0f), glm::vec3{20.0f, 0.0f, -20.0f}) * scale);
+
     return true;
+}
+
+auto HandleCamera(float deltaTime) -> void {
+
+    //g_cursorIsActive = glfwGetMouseButton(g_window, GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE;
+    //glfwSetInputMode(g_window, GLFW_CURSOR, g_cursorIsActive ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+
+    auto& inputState = GetInputState();
+
+    g_applicationContext.CursorIsActive = !inputState.Mouse.IsButtonPressed(EMouseButton::Right);
+
+    const glm::vec3 forward = g_mainCamera.GetForwardDirection();
+    const glm::vec3 right = glm::normalize(glm::cross(forward, g_unitY));
+
+    float tempCameraSpeed = g_cameraSpeed;
+    if (inputState.Keyboard.IsKeyPressed(EKey::KeyLeftShift)) {
+        tempCameraSpeed *= 4.0f;
+    }
+    if (inputState.Keyboard.IsKeyPressed(EKey::KeyLeftAlt)) {
+        tempCameraSpeed *= 40.0f;
+    }
+    if (inputState.Keyboard.IsKeyPressed(EKey::KeyLeftControl)) {
+        tempCameraSpeed *= 0.25f;
+    }
+    if (inputState.Keyboard.IsKeyPressed(EKey::KeyW)) {
+        g_mainCamera.Position += forward * deltaTime * tempCameraSpeed;
+    }
+    if (inputState.Keyboard.IsKeyPressed(EKey::KeyS)) {
+        g_mainCamera.Position -= forward * deltaTime * tempCameraSpeed;
+    }
+    if (inputState.Keyboard.IsKeyPressed(EKey::KeyA)) {
+        g_mainCamera.Position -= right * deltaTime * tempCameraSpeed;
+    }
+    if (inputState.Keyboard.IsKeyPressed(EKey::KeyD)) {
+        g_mainCamera.Position += right * deltaTime * tempCameraSpeed;
+    }
+    if (inputState.Keyboard.IsKeyPressed(EKey::KeyQ)) {
+        g_mainCamera.Position.y -= deltaTime * tempCameraSpeed;
+    }
+    if (inputState.Keyboard.IsKeyPressed(EKey::KeyE)) {
+        g_mainCamera.Position.y += deltaTime * tempCameraSpeed;
+    }
+
+    if (!g_applicationContext.CursorIsActive) {
+        auto& deltaPosition = inputState.Mouse.GetDeltaCursorPosition();
+        g_mainCamera.Yaw += static_cast<float>(deltaPosition.x * g_applicationContext.CursorSensitivity);
+        g_mainCamera.Pitch += static_cast<float>(deltaPosition.y * g_applicationContext.CursorSensitivity);
+        g_mainCamera.Pitch = glm::clamp(g_mainCamera.Pitch, -glm::half_pi<float>() + 1e-4f, glm::half_pi<float>() - 1e-4f);
+    }
+
+    g_applicationContext.CursorFrameOffset = {0.0, 0.0};
+    inputState.Mouse.SetDeltaCursorPosition(0.0f, 0.0f);
 }
 
 auto GameUpdate(entt::registry& registry, float deltaTime) -> void {
 
+    HandleCamera(deltaTime);
 }
 
 auto GameRender(entt::registry& registry, float deltaTime) -> void {
@@ -60,101 +148,18 @@ auto GameRender(entt::registry& registry, float deltaTime) -> void {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Resize if necessary
-    if (g_applicationContext.WindowFramebufferResized || g_applicationContext.SceneViewerResized) {
-
-        g_applicationContext.WindowFramebufferScaledSize = glm::ivec2{g_applicationContext.WindowFramebufferSize.x * g_applicationSettings.ResolutionScale,
-                                                                      g_applicationContext.WindowFramebufferSize.y * g_applicationSettings.ResolutionScale};
-        g_applicationContext.SceneViewerScaledSize = glm::ivec2{g_applicationContext.SceneViewerSize.x * g_applicationSettings.ResolutionScale,
-                                                                g_applicationContext.SceneViewerSize.y * g_applicationSettings.ResolutionScale};
-
-        if (g_applicationContext.IsEditor) {
-            g_scaledFramebufferSize = g_applicationContext.SceneViewerScaledSize;
-        } else {
-            g_scaledFramebufferSize = g_applicationContext.WindowFramebufferScaledSize;
-        }
-
-        if (g_applicationContext.FrameCounter > 0) {
-            DeleteRendererFramebuffers();
-            if (g_scaledFramebufferSize.x + g_scaledFramebufferSize.y <= glm::epsilon<float>()) {
-                g_scaledFramebufferSize = g_applicationContext.WindowFramebufferScaledSize;
-            }
-        }
-        CreateRendererFramebuffers(g_scaledFramebufferSize);
-
-        glViewport(0, 0, g_scaledFramebufferSize.x, g_scaledFramebufferSize.y);
-
-        g_applicationContext.WindowFramebufferResized = false;
-        g_applicationContext.SceneViewerResized = false;
-    }
+    ResizeFramebuffersIfNecessary(g_applicationSettings);
+    Render(registry, deltaTime, g_mainCamera);
 }
 
-auto GameRenderUI(entt::registry& registry, float deltaTime) -> void {
+auto GameRenderUi(entt::registry& registry, float deltaTime) -> void {
 
-    if (!g_applicationContext.IsEditor) {
-        ImGui::SetNextWindowPos({32, 32});
-        ImGui::SetNextWindowSize({168, 152});
-        auto windowBackgroundColor = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
-        windowBackgroundColor.w = 0.4f;
-        ImGui::PushStyleColor(ImGuiCol_WindowBg, windowBackgroundColor);
-        if (ImGui::Begin("#InGameStatistics", nullptr, ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoDecoration)) {
-
-            ImGui::TextColored(ImVec4{0.9f, 0.7f, 0.0f, 1.0f}, "F1 to toggle editor");
-            ImGui::SeparatorText("Frame Statistics");
-
-            auto framesPerSecond = 1.0f / deltaTime;
-            ImGui::Text("afps: %.0f rad/s", glm::two_pi<float>() * framesPerSecond);
-            ImGui::Text("dfps: %.0f °/s", glm::degrees(glm::two_pi<float>() * framesPerSecond));
-            ImGui::Text("rfps: %.0f", framesPerSecond);
-            ImGui::Text("rpms: %.0f", framesPerSecond * 60.0f);
-            ImGui::Text("  ft: %.2f ms", deltaTime * 1000.0f);
-            ImGui::Text("   f: %lu", g_applicationContext.FrameCounter);
-        }
-        ImGui::End();
-        ImGui::PopStyleColor();
-    }
-
-    if (g_applicationContext.IsEditor) {
-        ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_PassthruCentralNode);
-
-        if (ImGui::BeginMainMenuBar()) {
-            //ImGui::Image(reinterpret_cast<ImTextureID>(g_iconPackageGreen), ImVec2(16, 16), g_imvec2UnitY, g_imvec2UnitX);
-            ImGui::SetCursorPosX(20.0f);
-            if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("Quit")) {
-
-                }
-                ImGui::EndMenu();
-            }
-            ImGui::EndMainMenuBar();
-        }
-
-        // Scene Viewer
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        if (ImGui::Begin("Scene")) {
-            auto availableSceneWindowSize = ImGui::GetContentRegionAvail();
-            if (availableSceneWindowSize.x != g_applicationContext.SceneViewerSize.x || availableSceneWindowSize.y != g_applicationContext.SceneViewerSize.y) {
-                g_applicationContext.SceneViewerSize = glm::ivec2(availableSceneWindowSize.x, availableSceneWindowSize.y);
-                g_applicationContext.SceneViewerResized = true;
-            }
-
-            auto texture = g_geometryFramebuffer.ColorAttachments[1].value().Texture.Id;
-            auto imagePosition = ImGui::GetCursorPos();
-            ImGui::Image(reinterpret_cast<ImTextureID>(texture), availableSceneWindowSize, g_imvec2UnitY, g_imvec2UnitX);
-            ImGui::SetCursorPos(imagePosition);
-            if (ImGui::BeginChild(1, ImVec2{192, -1})) {
-                if (ImGui::CollapsingHeader("Statistics")) {
-                    ImGui::Text("Text");
-                }
-            }
-            ImGui::EndChild();
-        }
-        ImGui::PopStyleVar();
-        ImGui::End();
-    }
+    RenderUi(registry, deltaTime);
 }
 
 auto GameUnload() -> void {
 
+    UnloadRenderer();
 }
 
 auto RunGame(const SApplicationSettings& applicationSettings) -> void {
@@ -164,6 +169,6 @@ auto RunGame(const SApplicationSettings& applicationSettings) -> void {
                    &GameLoad,
                    &GameUpdate,
                    &GameRender,
-                   &GameRenderUI,
+                   &GameRenderUi,
                    &GameUnload);
 }
