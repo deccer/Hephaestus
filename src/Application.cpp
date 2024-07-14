@@ -404,7 +404,7 @@ auto RunApplication(const SApplicationSettings& applicationSettings,
             auto* imGuiDrawData = ImGui::GetDrawData();
             if (imGuiDrawData != nullptr) {
                 glDisable(GL_FRAMEBUFFER_SRGB);
-                //isSrgbDisabled = true;
+                isSrgbDisabled = true;
                 //PushDebugGroup("UI");
                 glViewport(0, 0, g_applicationContext.WindowFramebufferSize.x, g_applicationContext.WindowFramebufferSize.y);
                 ImGui_ImplOpenGL3_RenderDrawData(imGuiDrawData);
