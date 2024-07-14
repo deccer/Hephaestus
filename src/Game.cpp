@@ -6,6 +6,8 @@
 #include <entt/entt.hpp>
 #include <glad/gl.h>
 
+#include <random>
+
 SApplicationSettings g_applicationSettings = {};
 const glm::vec3 g_unitX = glm::vec3{1.0f, 0.0f, 0.0f};
 const glm::vec3 g_unitY = glm::vec3{0.0f, 1.0f, 0.0f};
@@ -70,18 +72,20 @@ auto GameLoad(entt::registry& registry) -> bool {
     }
 
     LoadModelFromFile("SM_Deccer_Cubes_Textured", "data/default/SM_Deccer_Cubes_Textured.glb");
-    LoadModelFromFile("SM_Asteroid1", "data/Asteroids/nasa1.glb");
-    LoadModelFromFile("SM_Asteroid2", "data/Asteroids/nasa2.glb");
-    LoadModelFromFile("SM_Asteroid3", "data/Asteroids/nasa3.glb");
-    LoadModelFromFile("SM_Asteroid4", "data/Asteroids/nasa4.glb");
 
     AddEntity(registry, std::nullopt, "SM_Deccer_Cubes_Textured", glm::mat4(1.0f));
 
-    auto scale = glm::scale(glm::mat4(1.0f), glm::vec3{400.0f, 400.0f, 400.0f});
-    AddEntity(registry, std::nullopt, "SM_Asteroid1", glm::translate(glm::mat4(1.0f), glm::vec3{-20.0f, 0.0f, 20.0f}) * scale);
-    AddEntity(registry, std::nullopt, "SM_Asteroid2", glm::translate(glm::mat4(1.0f), glm::vec3{20.0f, 0.0f, -20.0f}) * scale);
-    AddEntity(registry, std::nullopt, "SM_Asteroid3", glm::translate(glm::mat4(1.0f), glm::vec3{-20.0f, 0.0f, 20.0f}) * scale);
-    AddEntity(registry, std::nullopt, "SM_Asteroid4", glm::translate(glm::mat4(1.0f), glm::vec3{20.0f, 0.0f, -20.0f}) * scale);
+    auto scale = glm::scale(glm::mat4(1.0f), glm::vec3{1.0f, 1.0f, 1.0f});
+    std::random_device randomDevice;
+    std::mt19937 generator(randomDevice());
+    std::uniform_real_distribution distribution100(0.0f, 100.0f);
+
+    for (auto i = 0; i < 50; i++) {
+        AddEntity(registry, std::nullopt, "SM_Deccer_Cubes_Textured",
+                  glm::translate(glm::mat4(1.0f), glm::vec3{ -50.0f + distribution100(generator),
+                                                             -50.0f + distribution100(generator),
+                                                             -50.0f + distribution100(generator) }) * scale);
+    }
 
     return true;
 }
