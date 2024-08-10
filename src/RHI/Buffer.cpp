@@ -1,5 +1,5 @@
-#include <Xacor/RHI/Buffer.hpp>
-#include <Xacor/RHI/Debug.hpp>
+#include <Hephaestus/RHI/Buffer.hpp>
+#include <Hephaestus/RHI/Debug.hpp>
 
 #include <glad/gl.h>
 

@@ -1,4 +1,4 @@
-#include <Xacor/Input/Mouse.hpp>
+#include <Hephaestus/Input/Mouse.hpp>
 
 std::array<bool, static_cast<std::size_t>(EMouseButton::ButtonCount)> Mouse::_buttons = {};
 glm::ivec2 Mouse::_deltaCursorPosition = {};

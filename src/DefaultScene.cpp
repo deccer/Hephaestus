@@ -1,4 +1,4 @@
-#include <Xacor/DefaultScene.hpp>
+#include <Hephaestus/DefaultScene.hpp>
 
 DefaultScene::~DefaultScene() {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Xacor/Scene.hpp>
+#include <Hephaestus/Scene.hpp>
 
 class DefaultScene : public IScene {
 public:

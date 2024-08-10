@@ -1,9 +1,9 @@
-#include <Xacor/Application.hpp>
-#include <Xacor/Input/Keyboard.hpp>
-#include <Xacor/Input/Mouse.hpp>
+#include <Hephaestus/Application.hpp>
+#include <Hephaestus/Input/Keyboard.hpp>
+#include <Hephaestus/Input/Mouse.hpp>
 
-#include <Xacor/DefaultScene.hpp>
-#include <Xacor/DefaultRenderer.hpp>
+#include <Hephaestus/DefaultScene.hpp>
+#include <Hephaestus/DefaultRenderer.hpp>
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -208,7 +208,12 @@ static auto OnOpenGLDebugMessage(
 }
 
 Application::Application(const SApplicationCreateInfo& applicationCreateInfo)
-    : _applicationContext({}), _applicationSettings(applicationCreateInfo.Settings), _window(nullptr), _guiContext(nullptr) {
+    : _applicationSettings(applicationCreateInfo.Settings), _applicationContext({}), _window(nullptr), _guiContext(nullptr) {
+
+    _applicationContext.WindowFramebufferSize = {_applicationSettings.ResolutionWidth, _applicationSettings.ResolutionHeight};
+    _applicationContext.WindowFramebufferScaledSize = {static_cast<int32_t>(_applicationSettings.ResolutionWidth * _applicationSettings.ResolutionScale),
+                                                       static_cast<int32_t>(_applicationSettings.ResolutionHeight * _applicationSettings.ResolutionScale)};
+    _applicationContext.SceneViewerSize = {_applicationSettings.ResolutionWidth, _applicationSettings.ResolutionHeight};
 
     if (applicationCreateInfo.Scene == nullptr) {
         _scene = std::make_unique<DefaultScene>();
@@ -217,7 +222,7 @@ Application::Application(const SApplicationCreateInfo& applicationCreateInfo)
     }
 
     if (applicationCreateInfo.Renderer == nullptr) {
-        _renderer = std::make_unique<DefaultRenderer>();
+        _renderer = std::make_unique<DefaultRenderer>(_applicationSettings, _applicationContext);
     } else {
         _renderer.reset(applicationCreateInfo.Renderer);
     }
@@ -233,7 +238,10 @@ auto Application::Run() -> void {
         return;
     }
 
-    SRenderContext renderContext = {};
+    SRenderContext renderContext = {
+        .IsSrgbDisabled = true,
+        .FrameCounter = 0,
+    };
 
     auto currentTimeInSeconds = glfwGetTime();
     auto previousTimeInSeconds = glfwGetTime();
@@ -246,8 +254,57 @@ auto Application::Run() -> void {
         currentTimeInSeconds = glfwGetTime();
 
         renderContext.DeltaTime = static_cast<float>(deltaTimeInSeconds);
+        renderContext.FrameCounter++;
+
+        if (renderContext.IsSrgbDisabled) {
+            glEnable(GL_FRAMEBUFFER_SRGB);
+            renderContext.IsSrgbDisabled = false;
+        }
 
         _renderer->Render(renderContext, *_scene);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+
+        //if (!_applicationContext.IsEditor) {
+            ImGui::SetNextWindowPos({32, 32});
+            ImGui::SetNextWindowSize({168, 176});
+            auto windowBackgroundColor = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+            windowBackgroundColor.w = 0.4f;
+            ImGui::PushStyleColor(ImGuiCol_WindowBg, windowBackgroundColor);
+            if (ImGui::Begin("#InGameStatistics", nullptr, ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoDecoration)) {
+
+                ImGui::TextColored(ImVec4{0.9f, 0.7f, 0.0f, 1.0f}, "F1 to toggle editor");
+                ImGui::SeparatorText("Frame Statistics");
+
+                auto framesPerSecond = 1.0f / renderContext.DeltaTime;
+                ImGui::Text("afps: %.0f rad/s", glm::two_pi<float>() * framesPerSecond);
+                ImGui::Text("dfps: %.0f °/s", glm::degrees(glm::two_pi<float>() * framesPerSecond));
+                ImGui::Text("rfps: %.0f", framesPerSecond);
+                ImGui::Text("rpms: %.0f", framesPerSecond * 60.0f);
+                ImGui::Text("  ft: %.2f ms", renderContext.DeltaTime * 1000.0f);
+                ImGui::Text("   f: %lu", renderContext.FrameCounter);
+            }
+            ImGui::End();
+            ImGui::PopStyleColor();
+        //}
+
+
+        {
+            ImGui::Render();
+            auto* imGuiDrawData = ImGui::GetDrawData();
+            if (imGuiDrawData != nullptr) {
+                //PushDebugGroup("UI");
+                glDisable(GL_FRAMEBUFFER_SRGB);
+                renderContext.IsSrgbDisabled = true;
+                glViewport(0, 0, _applicationContext.WindowFramebufferSize.x, _applicationContext.WindowFramebufferSize.y);
+                ImGui_ImplOpenGL3_RenderDrawData(imGuiDrawData);
+                //PopDebugGroup();
+            }
+        }
+
         glfwSwapBuffers(_window);
 
         glfwWaitEventsTimeout(0.007);
@@ -297,7 +354,7 @@ auto Application::Initialize() -> bool {
 
     _window = glfwCreateWindow(windowWidth,
                                windowHeight,
-                               _applicationSettings.Title.empty() ? "Xacor" : _applicationSettings.Title.data(),
+                               _applicationSettings.Title.empty() ? "OpenSpace" : _applicationSettings.Title.data(),
                                monitor,
                                nullptr);
     if (_window == nullptr) {
@@ -345,6 +402,12 @@ auto Application::Initialize() -> bool {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+    io.Fonts->ClearFonts();
+    io.Fonts->AddFontFromFileTTF("data/Fonts/Ubuntu/UbuntuMono-R.ttf", 16.0f);
+    if (!io.Fonts->Build()) {
+        spdlog::error("ImGui: Unable to Build Font Atlas");
+    }
+
     if (!ImGui_ImplGlfw_InitForOpenGL(_window, true)) {
         spdlog::error("ImGui: Unable to initialize the GLFW backend");
         return false;
@@ -363,6 +426,13 @@ auto Application::Initialize() -> bool {
         glfwSwapInterval(0);
     }
 
+    glEnable(GL_FRAMEBUFFER_SRGB);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.03f, 0.05f, 0.07f, 1.0f);
+
     return true;
 }
 
@@ -376,6 +446,11 @@ auto Application::Load() -> bool {
 }
 
 auto Application::Unload() -> void {
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext(_guiContext);
+    _guiContext = nullptr;
 
     _renderer->Unload();
     glfwDestroyWindow(_window);

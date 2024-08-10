@@ -1,8 +1,7 @@
-#include <Xacor/RHI/Texture.hpp>
-#include <Xacor/RHI/Debug.hpp>
+#include <Hephaestus/RHI/Texture.hpp>
+#include <Hephaestus/RHI/Debug.hpp>
 
 #include <cassert>
-#include <utility>
 #include <vector>
 
 #include <glad/gl.h>
@@ -167,7 +166,7 @@ constexpr auto UploadTypeToGL(EUploadType uploadType) -> uint32_t {
     }
 }
 
-constexpr auto SampleCountToGL(ESampleCount sampleCount) -> uint32_t {
+constexpr auto SampleCountToGL(ESampleCount sampleCount) -> int32_t {
 
     switch (sampleCount) {
         case ESampleCount::One:
@@ -362,6 +361,77 @@ auto FormatToGL(EFormat format) -> uint32_t {
     }
 }
 
+auto FormatToBaseTypeClass(EFormat format) -> EBaseTypeClass {
+    switch (format) {
+        case EFormat::R8_UNORM:
+        case EFormat::R8_SNORM:
+        case EFormat::R16_UNORM:
+        case EFormat::R16_SNORM:
+        case EFormat::R8G8_UNORM:
+        case EFormat::R8G8_SNORM:
+        case EFormat::R16G16_UNORM:
+        case EFormat::R16G16_SNORM:
+        case EFormat::R3G3B2_UNORM:
+        case EFormat::R4G4B4_UNORM:
+        case EFormat::R5G5B5_UNORM:
+        case EFormat::R8G8B8_UNORM:
+        case EFormat::R8G8B8_SNORM:
+        case EFormat::R10G10B10_UNORM:
+        case EFormat::R12G12B12_UNORM:
+        case EFormat::R16G16B16_SNORM:
+        case EFormat::R2G2B2A2_UNORM:
+        case EFormat::R4G4B4A4_UNORM:
+        case EFormat::R5G5B5A1_UNORM:
+        case EFormat::R8G8B8A8_UNORM:
+        case EFormat::R8G8B8A8_SNORM:
+        case EFormat::R10G10B10A2_UNORM:
+        case EFormat::R12G12B12A12_UNORM:
+        case EFormat::R16G16B16A16_UNORM:
+        case EFormat::R8G8B8_SRGB:
+        case EFormat::R8G8B8A8_SRGB:
+        case EFormat::R16_FLOAT:
+        case EFormat::R16G16_FLOAT:
+        case EFormat::R16G16B16_FLOAT:
+        case EFormat::R16G16B16A16_FLOAT:
+        case EFormat::R32_FLOAT:
+        case EFormat::R32G32_FLOAT:
+        case EFormat::R32G32B32_FLOAT:
+        case EFormat::R32G32B32A32_FLOAT:
+        case EFormat::R11G11B10_FLOAT:
+        case EFormat::R9G9B9_E5:
+            return EBaseTypeClass::Float;
+        case EFormat::R8_SINT:
+        case EFormat::R16_SINT:
+        case EFormat::R32_SINT:
+        case EFormat::R8G8_SINT:
+        case EFormat::R16G16_SINT:
+        case EFormat::R32G32_SINT:
+        case EFormat::R8G8B8_SINT:
+        case EFormat::R16G16B16_SINT:
+        case EFormat::R32G32B32_SINT:
+        case EFormat::R8G8B8A8_SINT:
+        case EFormat::R16G16B16A16_SINT:
+        case EFormat::R32G32B32A32_SINT:
+            return EBaseTypeClass::Integer;
+        case EFormat::R10G10B10A2_UINT:
+        case EFormat::R8_UINT:
+        case EFormat::R16_UINT:
+        case EFormat::R32_UINT:
+        case EFormat::R8G8_UINT:
+        case EFormat::R16G16_UINT:
+        case EFormat::R32G32_UINT:
+        case EFormat::R8G8B8_UINT:
+        case EFormat::R16G16B16_UINT:
+        case EFormat::R32G32B32_UINT:
+        case EFormat::R8G8B8A8_UINT:
+        case EFormat::R16G16B16A16_UINT:
+        case EFormat::R32G32B32A32_UINT:
+            return EBaseTypeClass::UnsignedInteger;
+        default:
+            std::unreachable();
+    }
+}
+
 auto FormatToUploadFormat(EFormat format) -> EUploadFormat {
 
     switch (format) {
@@ -518,6 +588,177 @@ auto FormatToUnderlyingOpenGLType(EFormat format) -> uint32_t {
     }
 }
 
+auto FormatToComponentCount(EFormat format) -> int32_t {
+    switch (format) {
+        case EFormat::R8_UNORM:
+        case EFormat::R8_SNORM:
+        case EFormat::R16_UNORM:
+        case EFormat::R16_SNORM:
+        case EFormat::R16_FLOAT:
+        case EFormat::R32_FLOAT:
+        case EFormat::R8_SINT:
+        case EFormat::R16_SINT:
+        case EFormat::R32_SINT:
+        case EFormat::R8_UINT:
+        case EFormat::R16_UINT:
+        case EFormat::R32_UINT:
+            return 1;
+        case EFormat::R8G8_UNORM:
+        case EFormat::R8G8_SNORM:
+        case EFormat::R16G16_FLOAT:
+        case EFormat::R16G16_UNORM:
+        case EFormat::R16G16_SNORM:
+        case EFormat::R32G32_FLOAT:
+        case EFormat::R8G8_SINT:
+        case EFormat::R16G16_SINT:
+        case EFormat::R32G32_SINT:
+        case EFormat::R8G8_UINT:
+        case EFormat::R16G16_UINT:
+        case EFormat::R32G32_UINT:
+            return 2;
+        case EFormat::R8G8B8_UNORM:
+        case EFormat::R8G8B8_SNORM:
+        case EFormat::R16G16B16_SNORM:
+        case EFormat::R16G16B16_FLOAT:
+        case EFormat::R32G32B32_FLOAT:
+        case EFormat::R8G8B8_SINT:
+        case EFormat::R16G16B16_SINT:
+        case EFormat::R32G32B32_SINT:
+        case EFormat::R8G8B8_UINT:
+        case EFormat::R16G16B16_UINT:
+        case EFormat::R32G32B32_UINT:
+            return 3;
+        case EFormat::R8G8B8A8_UNORM:
+        case EFormat::R8G8B8A8_SNORM:
+        case EFormat::R16G16B16A16_UNORM:
+        case EFormat::R16G16B16A16_FLOAT:
+        case EFormat::R32G32B32A32_FLOAT:
+        case EFormat::R8G8B8A8_SINT:
+        case EFormat::R16G16B16A16_SINT:
+        case EFormat::R32G32B32A32_SINT:
+        case EFormat::R10G10B10A2_UINT:
+        case EFormat::R8G8B8A8_UINT:
+        case EFormat::R16G16B16A16_UINT:
+        case EFormat::R32G32B32A32_UINT:
+            return 4;
+        default:
+            std::unreachable();
+    }
+}
+
+auto IsFormatNormalized(EFormat format) -> int32_t {
+
+    switch (format) {
+        case EFormat::R8_UNORM:
+        case EFormat::R8_SNORM:
+        case EFormat::R16_UNORM:
+        case EFormat::R16_SNORM:
+        case EFormat::R8G8_UNORM:
+        case EFormat::R8G8_SNORM:
+        case EFormat::R16G16_UNORM:
+        case EFormat::R16G16_SNORM:
+        case EFormat::R8G8B8_UNORM:
+        case EFormat::R8G8B8_SNORM:
+        case EFormat::R16G16B16_SNORM:
+        case EFormat::R8G8B8A8_UNORM:
+        case EFormat::R8G8B8A8_SNORM:
+        case EFormat::R16G16B16A16_UNORM:
+            return GL_TRUE;
+        case EFormat::R16_FLOAT:
+        case EFormat::R32_FLOAT:
+        case EFormat::R8_SINT:
+        case EFormat::R16_SINT:
+        case EFormat::R32_SINT:
+        case EFormat::R8_UINT:
+        case EFormat::R16_UINT:
+        case EFormat::R32_UINT:
+        case EFormat::R16G16_FLOAT:
+        case EFormat::R32G32_FLOAT:
+        case EFormat::R8G8_SINT:
+        case EFormat::R16G16_SINT:
+        case EFormat::R32G32_SINT:
+        case EFormat::R8G8_UINT:
+        case EFormat::R16G16_UINT:
+        case EFormat::R32G32_UINT:
+        case EFormat::R16G16B16_FLOAT:
+        case EFormat::R32G32B32_FLOAT:
+        case EFormat::R8G8B8_SINT:
+        case EFormat::R16G16B16_SINT:
+        case EFormat::R32G32B32_SINT:
+        case EFormat::R8G8B8_UINT:
+        case EFormat::R16G16B16_UINT:
+        case EFormat::R32G32B32_UINT:
+        case EFormat::R16G16B16A16_FLOAT:
+        case EFormat::R32G32B32A32_FLOAT:
+        case EFormat::R8G8B8A8_SINT:
+        case EFormat::R16G16B16A16_SINT:
+        case EFormat::R32G32B32A32_SINT:
+        case EFormat::R10G10B10A2_UINT:
+        case EFormat::R8G8B8A8_UINT:
+        case EFormat::R16G16B16A16_UINT:
+        case EFormat::R32G32B32A32_UINT:
+            return GL_FALSE;
+        default:
+            std::unreachable();
+    }
+}
+
+auto FormatToFormatClass(EFormat format) -> EFormatClass {
+    switch (format) {
+        case EFormat::R8_UNORM:
+        case EFormat::R8_SNORM:
+        case EFormat::R16_UNORM:
+        case EFormat::R16_SNORM:
+        case EFormat::R8G8_UNORM:
+        case EFormat::R8G8_SNORM:
+        case EFormat::R16G16_UNORM:
+        case EFormat::R16G16_SNORM:
+        case EFormat::R8G8B8_UNORM:
+        case EFormat::R8G8B8_SNORM:
+        case EFormat::R16G16B16_SNORM:
+        case EFormat::R8G8B8A8_UNORM:
+        case EFormat::R8G8B8A8_SNORM:
+        case EFormat::R16G16B16A16_UNORM:
+        case EFormat::R16_FLOAT:
+        case EFormat::R16G16_FLOAT:
+        case EFormat::R16G16B16_FLOAT:
+        case EFormat::R16G16B16A16_FLOAT:
+        case EFormat::R32_FLOAT:
+        case EFormat::R32G32_FLOAT:
+        case EFormat::R32G32B32_FLOAT:
+        case EFormat::R32G32B32A32_FLOAT:
+            return EFormatClass::Float;
+        case EFormat::R8_SINT:
+        case EFormat::R16_SINT:
+        case EFormat::R32_SINT:
+        case EFormat::R8G8_SINT:
+        case EFormat::R16G16_SINT:
+        case EFormat::R32G32_SINT:
+        case EFormat::R8G8B8_SINT:
+        case EFormat::R16G16B16_SINT:
+        case EFormat::R32G32B32_SINT:
+        case EFormat::R8G8B8A8_SINT:
+        case EFormat::R16G16B16A16_SINT:
+        case EFormat::R32G32B32A32_SINT:
+        case EFormat::R10G10B10A2_UINT:
+        case EFormat::R8_UINT:
+        case EFormat::R16_UINT:
+        case EFormat::R32_UINT:
+        case EFormat::R8G8_UINT:
+        case EFormat::R16G16_UINT:
+        case EFormat::R32G32_UINT:
+        case EFormat::R8G8B8_UINT:
+        case EFormat::R16G16B16_UINT:
+        case EFormat::R32G32B32_UINT:
+        case EFormat::R8G8B8A8_UINT:
+        case EFormat::R16G16B16A16_UINT:
+        case EFormat::R32G32B32A32_UINT:
+            return EFormatClass::Integer;
+        default:
+            return EFormatClass::Long;
+    }
+}
+
 constexpr auto TextureTypeToDimension(ETextureType textureType) -> uint32_t {
 
     switch (textureType) {
@@ -533,77 +774,6 @@ constexpr auto TextureTypeToDimension(ETextureType textureType) -> uint32_t {
         case ETextureType::TextureCube:
         case ETextureType::TextureCubeArray:
             return 3;
-        default:
-            std::unreachable();
-    }
-}
-
-auto FormatToBaseTypeClass(EFormat format) -> EBaseTypeClass {
-    switch (format) {
-        case EFormat::R8_UNORM:
-        case EFormat::R8_SNORM:
-        case EFormat::R16_UNORM:
-        case EFormat::R16_SNORM:
-        case EFormat::R8G8_UNORM:
-        case EFormat::R8G8_SNORM:
-        case EFormat::R16G16_UNORM:
-        case EFormat::R16G16_SNORM:
-        case EFormat::R3G3B2_UNORM:
-        case EFormat::R4G4B4_UNORM:
-        case EFormat::R5G5B5_UNORM:
-        case EFormat::R8G8B8_UNORM:
-        case EFormat::R8G8B8_SNORM:
-        case EFormat::R10G10B10_UNORM:
-        case EFormat::R12G12B12_UNORM:
-        case EFormat::R16G16B16_SNORM:
-        case EFormat::R2G2B2A2_UNORM:
-        case EFormat::R4G4B4A4_UNORM:
-        case EFormat::R5G5B5A1_UNORM:
-        case EFormat::R8G8B8A8_UNORM:
-        case EFormat::R8G8B8A8_SNORM:
-        case EFormat::R10G10B10A2_UNORM:
-        case EFormat::R12G12B12A12_UNORM:
-        case EFormat::R16G16B16A16_UNORM:
-        case EFormat::R8G8B8_SRGB:
-        case EFormat::R8G8B8A8_SRGB:
-        case EFormat::R16_FLOAT:
-        case EFormat::R16G16_FLOAT:
-        case EFormat::R16G16B16_FLOAT:
-        case EFormat::R16G16B16A16_FLOAT:
-        case EFormat::R32_FLOAT:
-        case EFormat::R32G32_FLOAT:
-        case EFormat::R32G32B32_FLOAT:
-        case EFormat::R32G32B32A32_FLOAT:
-        case EFormat::R11G11B10_FLOAT:
-        case EFormat::R9G9B9_E5:
-            return EBaseTypeClass::Float;
-        case EFormat::R8_SINT:
-        case EFormat::R16_SINT:
-        case EFormat::R32_SINT:
-        case EFormat::R8G8_SINT:
-        case EFormat::R16G16_SINT:
-        case EFormat::R32G32_SINT:
-        case EFormat::R8G8B8_SINT:
-        case EFormat::R16G16B16_SINT:
-        case EFormat::R32G32B32_SINT:
-        case EFormat::R8G8B8A8_SINT:
-        case EFormat::R16G16B16A16_SINT:
-        case EFormat::R32G32B32A32_SINT:
-            return EBaseTypeClass::Integer;
-        case EFormat::R10G10B10A2_UINT:
-        case EFormat::R8_UINT:
-        case EFormat::R16_UINT:
-        case EFormat::R32_UINT:
-        case EFormat::R8G8_UINT:
-        case EFormat::R16G16_UINT:
-        case EFormat::R32G32_UINT:
-        case EFormat::R8G8B8_UINT:
-        case EFormat::R16G16B16_UINT:
-        case EFormat::R32G32B32_UINT:
-        case EFormat::R8G8B8A8_UINT:
-        case EFormat::R16G16B16A16_UINT:
-        case EFormat::R32G32B32A32_UINT:
-            return EBaseTypeClass::UnsignedInteger;
         default:
             std::unreachable();
     }
@@ -633,67 +803,67 @@ auto CreateTexture(const SCreateTextureDescriptor& createTextureDescriptor) -> S
             glTextureStorage1D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
-                               createTextureDescriptor.Extent.Width);
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Width));
             break;
         case ETextureType::Texture2D:
             glTextureStorage2D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
-                               createTextureDescriptor.Extent.Width,
-                               createTextureDescriptor.Extent.Height);
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Width),
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Height));
             break;
         case ETextureType::Texture3D:
             glTextureStorage3D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
-                               createTextureDescriptor.Extent.Width,
-                               createTextureDescriptor.Extent.Height,
-                               createTextureDescriptor.Extent.Depth);
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Width),
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Height),
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Depth));
             break;
         case ETextureType::Texture1DArray:
             glTextureStorage2D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
-                               createTextureDescriptor.Extent.Width,
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Width),
                                createTextureDescriptor.Layers);
             break;
         case ETextureType::Texture2DArray:
             glTextureStorage3D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
-                               createTextureDescriptor.Extent.Width,
-                               createTextureDescriptor.Extent.Height,
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Width),
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Height),
                                createTextureDescriptor.Layers);
             break;
         case ETextureType::TextureCube:
             glTextureStorage2D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
-                               createTextureDescriptor.Extent.Width,
-                               createTextureDescriptor.Extent.Height);
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Width),
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Height));
             break;
         case ETextureType::TextureCubeArray:
             glTextureStorage3D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
-                               createTextureDescriptor.Extent.Width,
-                               createTextureDescriptor.Extent.Height,
-                               createTextureDescriptor.Layers);
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Width),
+                               static_cast<int32_t>(createTextureDescriptor.Extent.Height),
+                               static_cast<int32_t>(createTextureDescriptor.Layers));
             break;
         case ETextureType::Texture2DMultisample:
             glTextureStorage2DMultisample(texture.Id,
                                           SampleCountToGL(createTextureDescriptor.SampleCount),
                                           FormatToGL(createTextureDescriptor.Format),
-                                          createTextureDescriptor.Extent.Width,
-                                          createTextureDescriptor.Extent.Height,
+                                          static_cast<int32_t>(createTextureDescriptor.Extent.Width),
+                                          static_cast<int32_t>(createTextureDescriptor.Extent.Height),
                                           GL_TRUE);
             break;
         case ETextureType::Texture2DMultisampleArray:
             glTextureStorage3DMultisample(texture.Id,
                                           SampleCountToGL(createTextureDescriptor.SampleCount),
                                           FormatToGL(createTextureDescriptor.Format),
-                                          createTextureDescriptor.Extent.Width,
-                                          createTextureDescriptor.Extent.Height,
+                                          static_cast<int32_t>(createTextureDescriptor.Extent.Width),
+                                          static_cast<int32_t>(createTextureDescriptor.Extent.Height),
                                           createTextureDescriptor.Layers,
                                           GL_TRUE);
             break;
@@ -773,7 +943,7 @@ auto MakeTextureResident(const STextureId& textureId) -> uint64_t {
     return textureHandle;
 }
 
-auto GenerateMipmaps(const STextureId textureId) -> void {
+auto GenerateMipmaps(const STextureId& textureId) -> void {
 
     auto& texture = GetTexture(textureId);
     glGenerateTextureMipmap(texture.Id);

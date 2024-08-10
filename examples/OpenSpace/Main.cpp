@@ -1,11 +1,33 @@
-#include <Xacor/Application.hpp>
+#include <Hephaestus/Application.hpp>
+#include <Hephaestus/ApplicationContext.hpp>
 
 #include <cstdint>
+
+class MyRenderer : public IRenderer {
+public:
+    ~MyRenderer() override {
+
+    }
+
+    auto Load() -> bool override {
+        return true;
+    }
+
+    auto Unload() -> void override {
+
+    }
+
+    auto Render(SRenderContext& renderContext,
+                IScene& scene) -> void override {
+
+    }
+};
 
 auto main(
     [[maybe_unused]] int32_t argc,
     [[maybe_unused]] char* argv[]) -> int32_t {
 
+    //auto myRenderer = std::make_unique<MyRenderer>();
     Application application({
         .Settings = {
             .ResolutionWidth = 1920,
@@ -15,7 +37,8 @@ auto main(
             .WindowStyle = EWindowStyle::Windowed,
             .IsDebug = true,
             .IsVSyncEnabled = true,
-        }
+        },
+        //.Renderer = myRenderer.release(),
     });
 
     application.Run();
