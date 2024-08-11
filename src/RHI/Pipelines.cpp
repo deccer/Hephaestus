@@ -115,6 +115,10 @@ auto Pipeline::SetUniform(int32_t location,
 
 auto GraphicsPipeline::Bind() -> void {
 
+    if (g_defaultInputLayout == 0) {
+        glCreateVertexArrays(1, &g_defaultInputLayout);
+    }
+
     Pipeline::Bind();
     glBindVertexArray(InputLayout.value_or(g_defaultInputLayout));
 }
@@ -130,13 +134,13 @@ auto GraphicsPipeline::BindBufferAsVertexBuffer(uint32_t buffer,
 }
 
 auto GraphicsPipeline::DrawArrays(int32_t vertexOffset,
-                                   int32_t vertexCount) -> void {
+                                  int32_t vertexCount) -> void {
 
     glDrawArrays(PrimitiveTopology, vertexOffset, vertexCount);
 }
 
 auto GraphicsPipeline::DrawElements(uint32_t indexBuffer,
-                                     int32_t elementCount) -> void {
+                                    int32_t elementCount) -> void {
 
     if (g_lastIndexBuffer != indexBuffer) {
         glVertexArrayElementBuffer(InputLayout.has_value() ? InputLayout.value() : g_defaultInputLayout, indexBuffer);

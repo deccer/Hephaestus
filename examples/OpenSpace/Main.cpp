@@ -36,7 +36,7 @@ auto main(
             .ResolutionStartup = EResolutionStartup::NinetyPercentOfScreenSize,
             .WindowStyle = EWindowStyle::Windowed,
             .IsDebug = true,
-            .IsVSyncEnabled = true,
+            .IsVSyncEnabled = false,
         },
         //.Renderer = myRenderer.release(),
     });

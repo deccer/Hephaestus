@@ -263,34 +263,13 @@ auto Application::Run() -> void {
 
         _renderer->Render(renderContext, *_scene);
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        {
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+        }
 
-
-        //if (!_applicationContext.IsEditor) {
-            ImGui::SetNextWindowPos({32, 32});
-            ImGui::SetNextWindowSize({168, 176});
-            auto windowBackgroundColor = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
-            windowBackgroundColor.w = 0.4f;
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, windowBackgroundColor);
-            if (ImGui::Begin("#InGameStatistics", nullptr, ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoDecoration)) {
-
-                ImGui::TextColored(ImVec4{0.9f, 0.7f, 0.0f, 1.0f}, "F1 to toggle editor");
-                ImGui::SeparatorText("Frame Statistics");
-
-                auto framesPerSecond = 1.0f / renderContext.DeltaTime;
-                ImGui::Text("afps: %.0f rad/s", glm::two_pi<float>() * framesPerSecond);
-                ImGui::Text("dfps: %.0f °/s", glm::degrees(glm::two_pi<float>() * framesPerSecond));
-                ImGui::Text("rfps: %.0f", framesPerSecond);
-                ImGui::Text("rpms: %.0f", framesPerSecond * 60.0f);
-                ImGui::Text("  ft: %.2f ms", renderContext.DeltaTime * 1000.0f);
-                ImGui::Text("   f: %lu", renderContext.FrameCounter);
-            }
-            ImGui::End();
-            ImGui::PopStyleColor();
-        //}
-
+        _renderer->RenderUserInterface(renderContext, *_scene);
 
         {
             ImGui::Render();

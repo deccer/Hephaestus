@@ -4,6 +4,7 @@ add_library(Hephaestus STATIC
     RHI/Texture.cpp
     RHI/Framebuffer.cpp
     RHI/Pipelines.cpp
+    Renderer.cpp
 
     DefaultRenderer.cpp
     DefaultScene.cpp

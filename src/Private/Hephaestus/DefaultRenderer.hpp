@@ -7,29 +7,25 @@
 
 #include <memory>
 
-class DefaultRenderer : public IRenderer {
+class DefaultRenderer : public Renderer {
 public:
-    explicit DefaultRenderer(const SApplicationSettings& applicationSettings,
-                             const SApplicationContext& applicationContext);
+    DefaultRenderer(const SApplicationSettings& applicationSettings,
+                    const SApplicationContext& applicationContext) : Renderer(applicationSettings, applicationContext) {}
+    ~DefaultRenderer() override = default;
 
-    ~DefaultRenderer() override;
     auto Load() -> bool override;
     auto Unload() -> void override;
     auto Render(SRenderContext& renderContext,
                 IScene& scene) -> void override;
+    auto RenderUserInterface(SRenderContext& renderContext,
+                             IScene& scene) -> void override;
 private:
     auto DestroyFramebuffers() -> void;
     auto CreateFramebuffers(const glm::ivec2& scaledFramebufferSize) -> void;
 
-    SApplicationSettings _applicationSettings = {};
-    SApplicationContext _applicationContext = {};
-
-    SFramebuffer _depthPrePassFramebuffer;
-    SGraphicsPipelineId _depthPrePassPipeline = SGraphicsPipelineId::Invalid;
-
     SFramebuffer _geometryPassFramebuffer;
     SGraphicsPipelineId _geometryPassPipeline = SGraphicsPipelineId::Invalid;
 
-    SFramebuffer _resolvePassFramebuffer;
-    SGraphicsPipelineId _resolvePassPipeline = SGraphicsPipelineId::Invalid;
+    SFramebuffer _fullscreenPassFramebuffer;
+    SGraphicsPipelineId _fullscreenPassPipeline = SGraphicsPipelineId::Invalid;
 };

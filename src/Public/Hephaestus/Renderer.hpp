@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Hephaestus/ApplicationSettings.hpp>
 #include <Hephaestus/ApplicationContext.hpp>
 
 struct IScene;
@@ -17,4 +18,18 @@ public:
     virtual auto Unload() -> void = 0;
     virtual auto Render(SRenderContext& renderContext,
                         IScene& scene) -> void = 0;
+    virtual auto RenderUserInterface(SRenderContext& renderContext,
+                                     IScene& scene) -> void = 0;
+};
+
+class Renderer : public IRenderer {
+public:
+    explicit Renderer(const SApplicationSettings& applicationSettings,
+                      const SApplicationContext& applicationContext);
+
+    auto RenderUserInterface(SRenderContext& renderContext,
+                             IScene& scene) -> void override;
+protected:
+    SApplicationSettings ApplicationSettings = {};
+    SApplicationContext ApplicationContext = {};
 };

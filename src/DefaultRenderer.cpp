@@ -1,45 +1,28 @@
 #include <Hephaestus/DefaultRenderer.hpp>
 
 #include <glad/gl.h>
-
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 #include <spdlog/spdlog.h>
-
-DefaultRenderer::DefaultRenderer(const SApplicationSettings& applicationSettings,
-                                 const SApplicationContext& applicationContext) {
-    _applicationSettings = applicationSettings;
-    _applicationContext = applicationContext;
-}
-
-DefaultRenderer::~DefaultRenderer() {
-
-}
 
 auto DefaultRenderer::Load() -> bool {
 
-    _applicationContext.WindowFramebufferScaledSize = glm::ivec2{
-        _applicationContext.WindowFramebufferSize.x * _applicationSettings.ResolutionScale,
-        _applicationContext.WindowFramebufferSize.y * _applicationSettings.ResolutionScale};
-    _applicationContext.SceneViewerScaledSize = glm::ivec2{
-        _applicationContext.SceneViewerSize.x * _applicationSettings.ResolutionScale,
-        _applicationContext.SceneViewerSize.y * _applicationSettings.ResolutionScale};
+    ApplicationContext.WindowFramebufferScaledSize = glm::ivec2{
+        ApplicationContext.WindowFramebufferSize.x * ApplicationSettings.ResolutionScale,
+        ApplicationContext.WindowFramebufferSize.y * ApplicationSettings.ResolutionScale};
+    ApplicationContext.SceneViewerScaledSize = glm::ivec2{
+        ApplicationContext.SceneViewerSize.x * ApplicationSettings.ResolutionScale,
+        ApplicationContext.SceneViewerSize.y * ApplicationSettings.ResolutionScale};
 
     glm::ivec2 scaledFramebufferSize = {};
 
-    if (_applicationContext.IsEditor) {
-        scaledFramebufferSize = _applicationContext.SceneViewerScaledSize;
+    if (ApplicationContext.IsEditor) {
+        scaledFramebufferSize = ApplicationContext.SceneViewerScaledSize;
     } else {
-        scaledFramebufferSize = _applicationContext.WindowFramebufferScaledSize;
+        scaledFramebufferSize = ApplicationContext.WindowFramebufferScaledSize;
     }
     CreateFramebuffers(scaledFramebufferSize);
-
-    /*
-    auto depthPrePassResult = CreateGraphicsPipeline({});
-    if (!depthPrePassResult) {
-        spdlog::error(depthPrePassResult.error());
-        return false;
-    }
-    _depthPrePassPipeline.reset(&depthPrePassResult.value());
-     */
 
     auto geometryPassResult = CreateGraphicsPipeline({
         .Label = "GeometryPass",
@@ -57,67 +40,105 @@ auto DefaultRenderer::Load() -> bool {
 
     _geometryPassPipeline = *geometryPassResult;
 
+    auto fullscreenPassResult = CreateGraphicsPipeline({
+        .Label = "FullscreenPass",
+        .VertexShaderFilePath = "data/shaders/FST.vs.glsl",
+        .FragmentShaderFilePath = "data/shaders/FST.fs.glsl",
+        .InputAssembly = {
+                .PrimitiveTopology = EPrimitiveTopology::Triangles
+        }
+    });
+
+    _fullscreenPassPipeline = *fullscreenPassResult;
+
     return true;
 }
 
 auto DefaultRenderer::Unload() -> void {
 
     DestroyFramebuffers();
-    //DeletePipeline(*_depthPrePassPipeline);
-    DeletePipeline(_geometryPassPipeline);
-    //DeletePipeline(*_resolvePassPipeline);
+    DeleteGraphicsPipeline(_geometryPassPipeline);
+    DeleteGraphicsPipeline(_fullscreenPassPipeline);
 }
 
 auto DefaultRenderer::Render(SRenderContext &renderContext,
                              IScene &scene) -> void {
 
-    if (_applicationContext.WindowFramebufferResized || _applicationContext.SceneViewerResized) {
-        _applicationContext.WindowFramebufferScaledSize = glm::ivec2{
-            _applicationContext.WindowFramebufferSize.x * _applicationSettings.ResolutionScale,
-            _applicationContext.WindowFramebufferSize.y * _applicationSettings.ResolutionScale};
-        _applicationContext.SceneViewerScaledSize = glm::ivec2{
-            _applicationContext.SceneViewerSize.x * _applicationSettings.ResolutionScale,
-            _applicationContext.SceneViewerSize.y * _applicationSettings.ResolutionScale};
+    if (ApplicationContext.WindowFramebufferResized || ApplicationContext.SceneViewerResized) {
+        ApplicationContext.WindowFramebufferScaledSize = glm::ivec2{
+                ApplicationContext.WindowFramebufferSize.x * ApplicationSettings.ResolutionScale,
+                ApplicationContext.WindowFramebufferSize.y * ApplicationSettings.ResolutionScale};
+        ApplicationContext.SceneViewerScaledSize = glm::ivec2{
+                ApplicationContext.SceneViewerSize.x * ApplicationSettings.ResolutionScale,
+                ApplicationContext.SceneViewerSize.y * ApplicationSettings.ResolutionScale};
 
         glm::ivec2 scaledFramebufferSize = {};
 
-        if (_applicationContext.IsEditor) {
-            scaledFramebufferSize = _applicationContext.SceneViewerScaledSize;
+        if (ApplicationContext.IsEditor) {
+            scaledFramebufferSize = ApplicationContext.SceneViewerScaledSize;
         } else {
-            scaledFramebufferSize = _applicationContext.WindowFramebufferScaledSize;
+            scaledFramebufferSize = ApplicationContext.WindowFramebufferScaledSize;
         }
 
         if (renderContext.FrameCounter > 0) {
             DestroyFramebuffers();
             if (scaledFramebufferSize.x + scaledFramebufferSize.y <= glm::epsilon<float>()) {
-                scaledFramebufferSize = _applicationContext.WindowFramebufferScaledSize;
+                scaledFramebufferSize = ApplicationContext.WindowFramebufferScaledSize;
             }
         }
         CreateFramebuffers(scaledFramebufferSize);
 
         glViewport(0, 0, scaledFramebufferSize.x, scaledFramebufferSize.y);
 
-        _applicationContext.WindowFramebufferResized = false;
-        _applicationContext.SceneViewerResized = false;
+        ApplicationContext.WindowFramebufferResized = false;
+        ApplicationContext.SceneViewerResized = false;
     }
 
     BindFramebuffer(_geometryPassFramebuffer);
 }
 
+auto DefaultRenderer::RenderUserInterface(SRenderContext &renderContext,
+                                          IScene &scene) -> void {
+
+    Renderer::RenderUserInterface(renderContext, scene);
+    auto& fullscreenPipeline = GetGraphicsPipeline(_fullscreenPassPipeline);
+
+    fullscreenPipeline.Bind();
+    fullscreenPipeline.BindTexture(0, _geometryPassFramebuffer.ColorAttachments[0].value().Texture.Id);
+    fullscreenPipeline.DrawArrays(0, 3);
+
+    if (!ApplicationContext.IsEditor) {
+        ImGui::SetNextWindowPos({32, 32});
+        ImGui::SetNextWindowSize({168, 176});
+        auto windowBackgroundColor = ImGui::GetStyleColorVec4(ImGuiCol_WindowBg);
+        windowBackgroundColor.w = 0.4f;
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, windowBackgroundColor);
+        if (ImGui::Begin("#InGameStatistics", nullptr, ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoDecoration)) {
+
+            ImGui::TextColored(ImVec4{0.9f, 0.7f, 0.0f, 1.0f}, "F1 to toggle editor");
+            ImGui::SeparatorText("Frame Statistics");
+
+            auto framesPerSecond = 1.0f / renderContext.DeltaTime;
+            ImGui::Text("afps: %.0f rad/s", glm::two_pi<float>() * framesPerSecond);
+            ImGui::Text("dfps: %.0f °/s", glm::degrees(glm::two_pi<float>() * framesPerSecond));
+            ImGui::Text("rfps: %.0f", framesPerSecond);
+            ImGui::Text("rpms: %.0f", framesPerSecond * 60.0f);
+            ImGui::Text("  ft: %.2f ms", renderContext.DeltaTime * 1000.0f);
+            ImGui::Text("   f: %lu", renderContext.FrameCounter);
+        }
+        ImGui::End();
+        ImGui::PopStyleColor();
+    }
+
+}
+
 auto DefaultRenderer::DestroyFramebuffers() -> void {
 
-    //DeleteFramebuffer(_depthPrePassFramebuffer);
     DeleteFramebuffer(_geometryPassFramebuffer);
     //DeleteFramebuffer(_resolvePassFramebuffer);
 }
 
 auto DefaultRenderer::CreateFramebuffers(const glm::ivec2& scaledFramebufferSize) -> void {
-
-    /*
-    _depthPrePassFramebuffer = CreateFramebuffer({
-         .Label = "DepthPrePass",
-    });
-     */
 
     _geometryPassFramebuffer = CreateFramebuffer({
          .Label = "GeometryPass",
