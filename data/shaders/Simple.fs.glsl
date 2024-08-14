@@ -31,7 +31,7 @@ struct SGpuMaterial
     uint64_t _padding1;
 };
 
-layout (binding = 4, std430) readonly buffer GpuMaterialBuffer
+layout(binding = 4, std430) readonly buffer GpuMaterialBuffer
 {
     SGpuMaterial GpuMaterials[];
 };

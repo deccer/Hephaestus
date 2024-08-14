@@ -4,12 +4,12 @@
 #extension GL_NV_gpu_shader5 : require
 #extension GL_ARB_gpu_shader_int64 : require
 
-layout (location = 0) in vec3 v_normal;
-layout (location = 1) in vec2 v_uv;
-layout (location = 2) flat in uint v_material_id;
+layout(location = 0) in vec3 v_normal;
+layout(location = 1) in vec2 v_uv;
+layout(location = 2) flat in uint v_material_id;
 
-layout (location = 0) out vec4 o_color;
-layout (location = 1) out vec4 o_normal;
+layout(location = 0) out vec4 o_color;
+layout(location = 1) out vec4 o_normal;
 
 struct SGpuMaterial
 {
@@ -24,7 +24,7 @@ struct SGpuMaterial
     uint64_t _padding1;
 };
 
-layout (binding = 3, std430) readonly buffer GpuMaterialBuffer
+layout(binding = 3, std430) readonly buffer GpuMaterialBuffer
 {
     SGpuMaterial GpuMaterials[];
 };

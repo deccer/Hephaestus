@@ -2,14 +2,14 @@
 
 #include "VertexTypes.include.glsl"
 
-layout (location = 0) out gl_PerVertex
+layout(location = 0) out gl_PerVertex
 {
     vec4 gl_Position;
 };
-layout (location = 0) out vec3 v_normal;
-layout (location = 1) out vec2 v_uv;
-layout (location = 2) out vec4 v_tangent;
-layout (location = 3) flat out uint v_material_id;
+layout(location = 0) out vec3 v_normal;
+layout(location = 1) out vec2 v_uv;
+layout(location = 2) out vec4 v_tangent;
+layout(location = 3) flat out uint v_material_id;
 
 layout (location = 0, std140) uniform SGpuGlobalUniformBuffer
 {

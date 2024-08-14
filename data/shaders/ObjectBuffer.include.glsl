@@ -7,7 +7,7 @@ struct SObject
     ivec4 InstanceParameter;
 };
 
-layout (binding = 3, std430) restrict readonly buffer ObjectsBuffer
+layout(binding = 3, std430) restrict readonly buffer ObjectsBuffer
 {
     SObject Objects[];
 };

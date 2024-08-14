@@ -3,13 +3,13 @@
 layout(location = 0) in vec3 i_position;
 layout(location = 1) in vec4 i_color;
 
-layout (location = 0) out gl_PerVertex
+layout(location = 0) out gl_PerVertex
 {
     vec4 gl_Position;
 };
 layout(location = 0) out vec4 v_color;
 
-layout (location = 0, std140) uniform CameraInformation
+layout(location = 0, std140) uniform CameraInformation
 {
     mat4 ProjectionMatrix;
     mat4 ViewMatrix;

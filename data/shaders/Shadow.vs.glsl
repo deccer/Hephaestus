@@ -2,9 +2,9 @@
 
 #include "VertexTypes.include.glsl"
 
-layout (location = 0) uniform int u_global_light_index;
+layout(location = 0) uniform int u_global_light_index;
 
-layout (location = 0) out gl_PerVertex
+layout(location = 0) out gl_PerVertex
 {
     vec4 gl_Position;
 };
@@ -21,7 +21,7 @@ struct SGpuGlobalLight {
     vec4 Strength;
 };
 
-layout (binding = 2, std140) uniform GlobalLights {
+layout(binding = 2, std140) uniform GlobalLights {
     mat4 ProjectionMatrix;
     mat4 ViewMatrix;
     vec4 Direction;
