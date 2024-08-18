@@ -286,7 +286,7 @@ auto Application::Run() -> void {
 
         glfwSwapBuffers(_window);
 
-        glfwWaitEventsTimeout(0.007);
+        glfwPollEvents();
     }
 
     Unload();
