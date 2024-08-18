@@ -8,4 +8,5 @@ add_dependencies(OpenSpace copy_data)
 target_link_libraries(OpenSpace
     PRIVATE Hephaestus
     PRIVATE glm-header-only
+    PRIVATE EnTT::EnTT
 )

@@ -23,6 +23,11 @@ public:
     }
 };
 
+class MyScene : public Scene {
+public:
+
+};
+
 auto main(
     [[maybe_unused]] int32_t argc,
     [[maybe_unused]] char* argv[]) -> int32_t {
@@ -36,7 +41,7 @@ auto main(
             .ResolutionStartup = EResolutionStartup::NinetyPercentOfScreenSize,
             .WindowStyle = EWindowStyle::Windowed,
             .IsDebug = true,
-            .IsVSyncEnabled = false,
+            .IsVSyncEnabled = true,
         },
         //.Renderer = myRenderer.release(),
     });

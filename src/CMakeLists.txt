@@ -5,6 +5,7 @@ add_library(Hephaestus STATIC
     RHI/Framebuffer.cpp
     RHI/Pipelines.cpp
     Renderer.cpp
+    Scene.cpp
 
     DefaultRenderer.cpp
     DefaultScene.cpp
@@ -25,4 +26,5 @@ target_link_libraries(Hephaestus
     PRIVATE debugbreak
     PRIVATE spdlog::spdlog_header_only
     PRIVATE stb
+    PRIVATE EnTT::EnTT
 )

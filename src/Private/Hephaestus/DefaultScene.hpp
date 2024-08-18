@@ -2,7 +2,7 @@
 
 #include <Hephaestus/Scene.hpp>
 
-class DefaultScene : public IScene {
+class DefaultScene : public Scene {
 public:
     ~DefaultScene() override;
 };
