@@ -3,23 +3,23 @@
 #include <cstdint>
 #include <string>
 
-enum class EWindowStyle {
+enum class TWindowStyle {
     Windowed,
     Fullscreen,
     FullscreenExclusive
 };
 
-enum class EResolutionStartup {
+enum class TResolutionStartup {
     NinetyPercentOfScreenSize,
     UseApplicationSettings
 };
 
-struct SApplicationSettings {
+struct TApplicationSettings {
     int32_t ResolutionWidth;
     int32_t ResolutionHeight;
     float ResolutionScale;
-    EResolutionStartup ResolutionStartup;
-    EWindowStyle WindowStyle;
+    TResolutionStartup ResolutionStartup;
+    TWindowStyle WindowStyle;
     bool IsDebug;
     bool IsVSyncEnabled;
     std::string Title;

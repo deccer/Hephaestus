@@ -10,49 +10,49 @@
 #include <optional>
 #include <string_view>
 
-enum class EPrimitiveTopology {
+enum class TPrimitiveTopology {
     Triangles,
     TriangleStrip,
     TriangleFan,
     Lines,
 };
 
-struct SInputAssemblyDescriptor {
-    EPrimitiveTopology PrimitiveTopology = EPrimitiveTopology::Triangles;
+struct TInputAssemblyDescriptor {
+    TPrimitiveTopology PrimitiveTopology = TPrimitiveTopology::Triangles;
     bool IsPrimitiveRestartEnabled = false;
 };
 
-struct SVertexInputAttributeDescriptor {
+struct TVertexInputAttributeDescriptor {
     uint32_t Location;
     uint32_t Binding;
-    EFormat Format;
+    TFormat Format;
     uint32_t Offset;
 };
 
-struct SVertexInputDescriptor {
-    std::array<std::optional<const SVertexInputAttributeDescriptor>, 8> VertexInputAttributes = {};
+struct TVertexInputDescriptor {
+    std::array<std::optional<const TVertexInputAttributeDescriptor>, 8> VertexInputAttributes = {};
 };
 
-struct SGraphicsPipelineDescriptor {
+struct TGraphicsPipelineDescriptor {
     std::string_view Label;
     std::string_view VertexShaderFilePath;
     std::string_view FragmentShaderFilePath;
 
-    SInputAssemblyDescriptor InputAssembly;
-    std::optional<SVertexInputDescriptor> VertexInput;
+    TInputAssemblyDescriptor InputAssembly;
+    std::optional<TVertexInputDescriptor> VertexInput;
 };
 
-struct SComputePipelineDescriptor {
+struct TComputePipelineDescriptor {
     std::string_view Label;
     std::string_view ComputeShaderFilePath;
 };
 
-using SGraphicsPipelineId = SId<struct TGraphicsPipelineId>;
-using SComputePipelineId = SId<struct TComputePipelineId>;
+using TGraphicsPipelineId = SId<struct TTagGraphicsPipelineId>;
+using TComputePipelineId = SId<struct TTagComputePipelineId>;
 
-class Pipeline {
+class TPipeline {
 public:
-    virtual ~Pipeline();
+    virtual ~TPipeline();
 
     virtual auto Bind() -> void;
 
@@ -108,7 +108,7 @@ public:
     uint32_t Id;
 };
 
-class GraphicsPipeline : public Pipeline {
+class TGraphicsPipeline : public TPipeline {
 public:
     auto Bind() -> void override;
 
@@ -132,14 +132,14 @@ public:
     bool IsPrimitiveRestartEnabled;
 };
 
-class ComputePipeline : public Pipeline {
+class TComputePipeline : public TPipeline {
 public:
 private:
 };
 
-auto GetGraphicsPipeline(SGraphicsPipelineId graphicsPipelineId) -> GraphicsPipeline&;
-auto GetComputePipeline(SComputePipelineId computePipelineId) -> ComputePipeline&;
-auto DeleteGraphicsPipeline(const SGraphicsPipelineId& graphicsPipelineId) -> void;
-auto DeleteComputePipeline(const SComputePipelineId& computePipelineId) -> void;
-auto CreateGraphicsPipeline(const SGraphicsPipelineDescriptor& graphicsPipelineDescriptor) -> std::expected<SGraphicsPipelineId, std::string>;
-auto CreateComputePipeline(const SComputePipelineDescriptor& computePipelineDescriptor) -> std::expected<SComputePipelineId, std::string>;
+auto GetGraphicsPipeline(TGraphicsPipelineId graphicsPipelineId) -> TGraphicsPipeline&;
+auto GetComputePipeline(TComputePipelineId computePipelineId) -> TComputePipeline&;
+auto DeleteGraphicsPipeline(const TGraphicsPipelineId& graphicsPipelineId) -> void;
+auto DeleteComputePipeline(const TComputePipelineId& computePipelineId) -> void;
+auto CreateGraphicsPipeline(const TGraphicsPipelineDescriptor& graphicsPipelineDescriptor) -> std::expected<TGraphicsPipelineId, std::string>;
+auto CreateComputePipeline(const TComputePipelineDescriptor& computePipelineDescriptor) -> std::expected<TComputePipelineId, std::string>;

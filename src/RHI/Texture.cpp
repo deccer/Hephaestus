@@ -6,352 +6,351 @@
 
 #include <glad/gl.h>
 
-std::vector<STexture> g_textures;
-STextureId g_textureCounter = STextureId::Invalid;
+std::vector<TTexture> g_textures;
 
-constexpr auto TextureAddressModeToGL(ETextureAddressMode textureAddressMode) -> uint32_t {
+constexpr auto TextureAddressModeToGL(TTextureAddressMode textureAddressMode) -> uint32_t {
     switch (textureAddressMode) {
-        case ETextureAddressMode::ClampToBorder :
+        case TTextureAddressMode::ClampToBorder:
             return GL_CLAMP_TO_BORDER;
-        case ETextureAddressMode::ClampToEdge :
+        case TTextureAddressMode::ClampToEdge:
             return GL_CLAMP_TO_EDGE;
-        case ETextureAddressMode::ClampToEdgeMirrored:
+        case TTextureAddressMode::ClampToEdgeMirrored:
             return GL_MIRROR_CLAMP_TO_EDGE;
-        case ETextureAddressMode::Repeat:
+        case TTextureAddressMode::Repeat:
             return GL_REPEAT;
-        case ETextureAddressMode::RepeatMirrored:
+        case TTextureAddressMode::RepeatMirrored:
             return GL_MIRRORED_REPEAT;
         default:
             std::unreachable();
     }
 }
 
-constexpr auto TextureMagFilterToGL(ETextureMagFilter textureMagFilter) -> uint32_t {
+constexpr auto TextureMagFilterToGL(TTextureMagFilter textureMagFilter) -> uint32_t {
     switch (textureMagFilter) {
-        case ETextureMagFilter::Linear:
+        case TTextureMagFilter::Linear:
             return GL_LINEAR;
-        case ETextureMagFilter::Nearest:
+        case TTextureMagFilter::Nearest:
             return GL_NEAREST;
         default:
             std::unreachable();
     }
 }
 
-constexpr auto TextureMinFilterToGL(ETextureMinFilter textureMinFilter) -> uint32_t {
+constexpr auto TextureMinFilterToGL(TTextureMinFilter textureMinFilter) -> uint32_t {
     switch (textureMinFilter) {
-        case ETextureMinFilter::Linear:
+        case TTextureMinFilter::Linear:
             return GL_LINEAR;
-        case ETextureMinFilter::Nearest:
+        case TTextureMinFilter::Nearest:
             return GL_NEAREST;
-        case ETextureMinFilter::LinearMipmapLinear:
+        case TTextureMinFilter::LinearMipmapLinear:
             return GL_LINEAR_MIPMAP_LINEAR;
-        case ETextureMinFilter::LinearMipmapNearest:
+        case TTextureMinFilter::LinearMipmapNearest:
             return GL_LINEAR_MIPMAP_NEAREST;
-        case ETextureMinFilter::NearestMipmapLinear:
+        case TTextureMinFilter::NearestMipmapLinear:
             return GL_NEAREST_MIPMAP_LINEAR;
-        case ETextureMinFilter::NearestMipmapNearest:
+        case TTextureMinFilter::NearestMipmapNearest:
             return GL_NEAREST_MIPMAP_NEAREST;
         default:
             std::unreachable();
     }
 }
 
-constexpr auto TextureTypeToGL(ETextureType textureType) -> uint32_t {
+constexpr auto TextureTypeToGL(TTextureType textureType) -> uint32_t {
 
     switch (textureType) {
-        case ETextureType::Texture1D:
+        case TTextureType::Texture1D:
             return GL_TEXTURE_1D;
-        case ETextureType::Texture2D:
+        case TTextureType::Texture2D:
             return GL_TEXTURE_2D;
-        case ETextureType::Texture3D:
+        case TTextureType::Texture3D:
             return GL_TEXTURE_3D;
-        case ETextureType::Texture1DArray:
+        case TTextureType::Texture1DArray:
             return GL_TEXTURE_1D_ARRAY;
-        case ETextureType::Texture2DArray:
+        case TTextureType::Texture2DArray:
             return GL_TEXTURE_2D_ARRAY;
-        case ETextureType::TextureCube:
+        case TTextureType::TextureCube:
             return GL_TEXTURE_CUBE_MAP;
-        case ETextureType::TextureCubeArray:
+        case TTextureType::TextureCubeArray:
             return GL_TEXTURE_CUBE_MAP_ARRAY;
-        case ETextureType::Texture2DMultisample:
+        case TTextureType::Texture2DMultisample:
             return GL_TEXTURE_2D_MULTISAMPLE;
-        case ETextureType::Texture2DMultisampleArray:
+        case TTextureType::Texture2DMultisampleArray:
             return GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
         default:
             std::unreachable();
     }
 }
 
-constexpr auto UploadFormatToGL(EUploadFormat uploadFormat) -> uint32_t {
+constexpr auto UploadFormatToGL(TUploadFormat uploadFormat) -> uint32_t {
 
     switch (uploadFormat) {
-        case EUploadFormat::R:
+        case TUploadFormat::R:
             return GL_RED;
-        case EUploadFormat::Rg:
+        case TUploadFormat::Rg:
             return GL_RG;
-        case EUploadFormat::Rgb:
+        case TUploadFormat::Rgb:
             return GL_RGB;
-        case EUploadFormat::Bgr:
+        case TUploadFormat::Bgr:
             return GL_BGR;
-        case EUploadFormat::Rgba:
+        case TUploadFormat::Rgba:
             return GL_RGBA;
-        case EUploadFormat::Bgra:
+        case TUploadFormat::Bgra:
             return GL_BGRA;
-        case EUploadFormat::RInteger:
+        case TUploadFormat::RInteger:
             return GL_RED_INTEGER;
-        case EUploadFormat::RgInteger:
+        case TUploadFormat::RgInteger:
             return GL_RG_INTEGER;
-        case EUploadFormat::RgbInteger:
+        case TUploadFormat::RgbInteger:
             return GL_RGB_INTEGER;
-        case EUploadFormat::BgrInteger:
+        case TUploadFormat::BgrInteger:
             return GL_BGR_INTEGER;
-        case EUploadFormat::RgbaInteger:
+        case TUploadFormat::RgbaInteger:
             return GL_RGBA_INTEGER;
-        case EUploadFormat::BgraInteger:
+        case TUploadFormat::BgraInteger:
             return GL_BGRA_INTEGER;
-        case EUploadFormat::Depth:
+        case TUploadFormat::Depth:
             return GL_DEPTH_COMPONENT;
-        case EUploadFormat::StencilIndex:
+        case TUploadFormat::StencilIndex:
             return GL_STENCIL_INDEX;
-        case EUploadFormat::DepthStencilIndex:
+        case TUploadFormat::DepthStencilIndex:
             return GL_DEPTH_STENCIL;
         default:
             std::unreachable();
     }
 }
 
-constexpr auto UploadTypeToGL(EUploadType uploadType) -> uint32_t {
+constexpr auto UploadTypeToGL(TUploadType uploadType) -> uint32_t {
 
     switch (uploadType) {
-        case EUploadType::UnsignedByte:
+        case TUploadType::UnsignedByte:
             return GL_UNSIGNED_BYTE;
-        case EUploadType::SignedByte:
+        case TUploadType::SignedByte:
             return GL_BYTE;
-        case EUploadType::UnsignedShort:
+        case TUploadType::UnsignedShort:
             return GL_UNSIGNED_SHORT;
-        case EUploadType::SignedShort:
+        case TUploadType::SignedShort:
             return GL_SHORT;
-        case EUploadType::UnsignedInteger:
+        case TUploadType::UnsignedInteger:
             return GL_UNSIGNED_INT;
-        case EUploadType::SignedInteger:
+        case TUploadType::SignedInteger:
             return GL_INT;
-        case EUploadType::Float:
+        case TUploadType::Float:
             return GL_FLOAT;
-        case EUploadType::UnsignedByte332:
+        case TUploadType::UnsignedByte332:
             return GL_UNSIGNED_BYTE_3_3_2;
-        case EUploadType::UnsignedByte233Reversed:
+        case TUploadType::UnsignedByte233Reversed:
             return GL_UNSIGNED_BYTE_2_3_3_REV;
-        case EUploadType::UnsignedShort565:
+        case TUploadType::UnsignedShort565:
             return GL_UNSIGNED_SHORT_5_6_5;
-        case EUploadType::UnsignedShort565Reversed:
+        case TUploadType::UnsignedShort565Reversed:
             return GL_UNSIGNED_SHORT_5_6_5_REV;
-        case EUploadType::UnsignedShort4444:
+        case TUploadType::UnsignedShort4444:
             return GL_UNSIGNED_SHORT_4_4_4_4;
-        case EUploadType::UnsignedShort4444Reversed:
+        case TUploadType::UnsignedShort4444Reversed:
             return GL_UNSIGNED_SHORT_4_4_4_4_REV;
-        case EUploadType::UnsignedShort5551:
+        case TUploadType::UnsignedShort5551:
             return GL_UNSIGNED_SHORT_5_5_5_1;
-        case EUploadType::UnsignedShort1555Reversed:
+        case TUploadType::UnsignedShort1555Reversed:
             return GL_UNSIGNED_SHORT_1_5_5_5_REV;
-        case EUploadType::UnsignedInteger8888:
+        case TUploadType::UnsignedInteger8888:
             return GL_UNSIGNED_INT_8_8_8_8;
-        case EUploadType::UnsignedInteger8888Reversed:
+        case TUploadType::UnsignedInteger8888Reversed:
             return GL_UNSIGNED_INT_8_8_8_8_REV;
-        case EUploadType::UnsignedInteger1010102:
+        case TUploadType::UnsignedInteger1010102:
             return GL_UNSIGNED_INT_10_10_10_2;
-        case EUploadType::UnsignedInteger2101010Reversed:
+        case TUploadType::UnsignedInteger2101010Reversed:
             return GL_UNSIGNED_INT_2_10_10_10_REV;
         default:
             std::unreachable();
     }
 }
 
-constexpr auto SampleCountToGL(ESampleCount sampleCount) -> int32_t {
+constexpr auto SampleCountToGL(TSampleCount sampleCount) -> int32_t {
 
     switch (sampleCount) {
-        case ESampleCount::One:
+        case TSampleCount::One:
             return 1;
-        case ESampleCount::Two:
+        case TSampleCount::Two:
             return 2;
-        case ESampleCount::Four:
+        case TSampleCount::Four:
             return 4;
-        case ESampleCount::Eight:
+        case TSampleCount::Eight:
             return 8;
-        case ESampleCount::SixTeen:
+        case TSampleCount::SixTeen:
             return 16;
-        case ESampleCount::ThirtyTwo:
+        case TSampleCount::ThirtyTwo:
             return 32;
         default:
             std::unreachable();
     }
 }
 
-auto FormatToGL(EFormat format) -> uint32_t {
+auto FormatToGL(TFormat format) -> uint32_t {
     switch (format) {
-        case EFormat::R8_UNORM:
+        case TFormat::R8_UNORM:
             return GL_R8;
-        case EFormat::R8_SNORM:
+        case TFormat::R8_SNORM:
             return GL_R8_SNORM;
-        case EFormat::R16_UNORM:
+        case TFormat::R16_UNORM:
             return GL_R16;
-        case EFormat::R16_SNORM:
+        case TFormat::R16_SNORM:
             return GL_R16_SNORM;
-        case EFormat::R8G8_UNORM:
+        case TFormat::R8G8_UNORM:
             return GL_RG8;
-        case EFormat::R8G8_SNORM:
+        case TFormat::R8G8_SNORM:
             return GL_RG8_SNORM;
-        case EFormat::R16G16_UNORM:
+        case TFormat::R16G16_UNORM:
             return GL_RG16;
-        case EFormat::R16G16_SNORM:
+        case TFormat::R16G16_SNORM:
             return GL_RG16_SNORM;
-        case EFormat::R3G3B2_UNORM:
+        case TFormat::R3G3B2_UNORM:
             return GL_R3_G3_B2;
-        case EFormat::R4G4B4_UNORM:
+        case TFormat::R4G4B4_UNORM:
             return GL_RGB4;
-        case EFormat::R5G5B5_UNORM:
+        case TFormat::R5G5B5_UNORM:
             return GL_RGB5;
-        case EFormat::R8G8B8_UNORM:
+        case TFormat::R8G8B8_UNORM:
             return GL_RGB8;
-        case EFormat::R8G8B8_SNORM:
+        case TFormat::R8G8B8_SNORM:
             return GL_RGB8_SNORM;
-        case EFormat::R10G10B10_UNORM:
+        case TFormat::R10G10B10_UNORM:
             return GL_RGB10;
-        case EFormat::R12G12B12_UNORM:
+        case TFormat::R12G12B12_UNORM:
             return GL_RGB12;
             // GL_RG16?
-        case EFormat::R16G16B16_SNORM:
+        case TFormat::R16G16B16_SNORM:
             return GL_RGB16_SNORM;
-        case EFormat::R2G2B2A2_UNORM:
+        case TFormat::R2G2B2A2_UNORM:
             return GL_RGBA2;
-        case EFormat::R4G4B4A4_UNORM:
+        case TFormat::R4G4B4A4_UNORM:
             return GL_RGBA4;
-        case EFormat::R5G5B5A1_UNORM:
+        case TFormat::R5G5B5A1_UNORM:
             return GL_RGB5_A1;
-        case EFormat::R8G8B8A8_UNORM:
+        case TFormat::R8G8B8A8_UNORM:
             return GL_RGBA8;
-        case EFormat::R8G8B8A8_SNORM:
+        case TFormat::R8G8B8A8_SNORM:
             return GL_RGBA8_SNORM;
-        case EFormat::R10G10B10A2_UNORM:
+        case TFormat::R10G10B10A2_UNORM:
             return GL_RGB10_A2;
-        case EFormat::R10G10B10A2_UINT:
+        case TFormat::R10G10B10A2_UINT:
             return GL_RGB10_A2UI;
-        case EFormat::R12G12B12A12_UNORM:
+        case TFormat::R12G12B12A12_UNORM:
             return GL_RGBA12;
-        case EFormat::R16G16B16A16_UNORM:
+        case TFormat::R16G16B16A16_UNORM:
             return GL_RGBA16;
-        case EFormat::R16G16B16A16_SNORM:
+        case TFormat::R16G16B16A16_SNORM:
             return GL_RGBA16_SNORM;
-        case EFormat::R8G8B8_SRGB:
+        case TFormat::R8G8B8_SRGB:
             return GL_SRGB8;
-        case EFormat::R8G8B8A8_SRGB:
+        case TFormat::R8G8B8A8_SRGB:
             return GL_SRGB8_ALPHA8;
-        case EFormat::R16_FLOAT:
+        case TFormat::R16_FLOAT:
             return GL_R16F;
-        case EFormat::R16G16_FLOAT:
+        case TFormat::R16G16_FLOAT:
             return GL_RG16F;
-        case EFormat::R16G16B16_FLOAT:
+        case TFormat::R16G16B16_FLOAT:
             return GL_RGB16F;
-        case EFormat::R16G16B16A16_FLOAT:
+        case TFormat::R16G16B16A16_FLOAT:
             return GL_RGBA16F;
-        case EFormat::R32_FLOAT:
+        case TFormat::R32_FLOAT:
             return GL_R32F;
-        case EFormat::R32G32_FLOAT:
+        case TFormat::R32G32_FLOAT:
             return GL_RG32F;
-        case EFormat::R32G32B32_FLOAT:
+        case TFormat::R32G32B32_FLOAT:
             return GL_RGB32F;
-        case EFormat::R32G32B32A32_FLOAT:
+        case TFormat::R32G32B32A32_FLOAT:
             return GL_RGBA32F;
-        case EFormat::R11G11B10_FLOAT:
+        case TFormat::R11G11B10_FLOAT:
             return GL_R11F_G11F_B10F;
-        case EFormat::R9G9B9_E5:
+        case TFormat::R9G9B9_E5:
             return GL_RGB9_E5;
-        case EFormat::R8_SINT:
+        case TFormat::R8_SINT:
             return GL_R8I;
-        case EFormat::R8_UINT:
+        case TFormat::R8_UINT:
             return GL_R8UI;
-        case EFormat::R16_SINT:
+        case TFormat::R16_SINT:
             return GL_R16I;
-        case EFormat::R16_UINT:
+        case TFormat::R16_UINT:
             return GL_R16UI;
-        case EFormat::R32_SINT:
+        case TFormat::R32_SINT:
             return GL_R32I;
-        case EFormat::R32_UINT:
+        case TFormat::R32_UINT:
             return GL_R32UI;
-        case EFormat::R8G8_SINT:
+        case TFormat::R8G8_SINT:
             return GL_RG8I;
-        case EFormat::R8G8_UINT:
+        case TFormat::R8G8_UINT:
             return GL_RG8UI;
-        case EFormat::R16G16_SINT:
+        case TFormat::R16G16_SINT:
             return GL_RG16I;
-        case EFormat::R16G16_UINT:
+        case TFormat::R16G16_UINT:
             return GL_RG16UI;
-        case EFormat::R32G32_SINT:
+        case TFormat::R32G32_SINT:
             return GL_RG32I;
-        case EFormat::R32G32_UINT:
+        case TFormat::R32G32_UINT:
             return GL_RG32UI;
-        case EFormat::R8G8B8_SINT:
+        case TFormat::R8G8B8_SINT:
             return GL_RGB8I;
-        case EFormat::R8G8B8_UINT:
+        case TFormat::R8G8B8_UINT:
             return GL_RGB8UI;
-        case EFormat::R16G16B16_SINT:
+        case TFormat::R16G16B16_SINT:
             return GL_RGB16I;
-        case EFormat::R16G16B16_UINT:
+        case TFormat::R16G16B16_UINT:
             return GL_RGB16UI;
-        case EFormat::R32G32B32_SINT:
+        case TFormat::R32G32B32_SINT:
             return GL_RGB32I;
-        case EFormat::R32G32B32_UINT:
+        case TFormat::R32G32B32_UINT:
             return GL_RGB32UI;
-        case EFormat::R8G8B8A8_SINT:
+        case TFormat::R8G8B8A8_SINT:
             return GL_RGBA8I;
-        case EFormat::R8G8B8A8_UINT:
+        case TFormat::R8G8B8A8_UINT:
             return GL_RGBA8UI;
-        case EFormat::R16G16B16A16_SINT:
+        case TFormat::R16G16B16A16_SINT:
             return GL_RGBA16I;
-        case EFormat::R16G16B16A16_UINT:
+        case TFormat::R16G16B16A16_UINT:
             return GL_RGBA16UI;
-        case EFormat::R32G32B32A32_SINT:
+        case TFormat::R32G32B32A32_SINT:
             return GL_RGBA32I;
-        case EFormat::R32G32B32A32_UINT:
+        case TFormat::R32G32B32A32_UINT:
             return GL_RGBA32UI;
-        case EFormat::D32_FLOAT:
+        case TFormat::D32_FLOAT:
             return GL_DEPTH_COMPONENT32F;
-        case EFormat::D32_UNORM:
+        case TFormat::D32_UNORM:
             return GL_DEPTH_COMPONENT32;
-        case EFormat::D24_UNORM:
+        case TFormat::D24_UNORM:
             return GL_DEPTH_COMPONENT24;
-        case EFormat::D16_UNORM:
+        case TFormat::D16_UNORM:
             return GL_DEPTH_COMPONENT16;
-        case EFormat::D32_FLOAT_S8_UINT:
+        case TFormat::D32_FLOAT_S8_UINT:
             return GL_DEPTH32F_STENCIL8;
-        case EFormat::D24_UNORM_S8_UINT:
+        case TFormat::D24_UNORM_S8_UINT:
             return GL_DEPTH24_STENCIL8;
-        case EFormat::S8_UINT:
+        case TFormat::S8_UINT:
             return GL_STENCIL_INDEX8;
             /*
-            case EFormat::BC1_RGB_UNORM: return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-            case EFormat::BC1_RGBA_UNORM: return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-            case EFormat::BC1_RGB_SRGB: return GL_COMPRESSED_SRGB_S3TC_DXT1_EXT;
-            case EFormat::BC1_RGBA_SRGB: return GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT;
-            case EFormat::BC2_RGBA_UNORM: return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
-            case EFormat::BC2_RGBA_SRGB: return GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT;
-            case EFormat::BC3_RGBA_UNORM: return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-            case EFormat::BC3_RGBA_SRGB: return GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+            case TFormat::BC1_RGB_UNORM: return GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+            case TFormat::BC1_RGBA_UNORM: return GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+            case TFormat::BC1_RGB_SRGB: return GL_COMPRESSED_SRGB_S3TC_DXT1_EXT;
+            case TFormat::BC1_RGBA_SRGB: return GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT;
+            case TFormat::BC2_RGBA_UNORM: return GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+            case TFormat::BC2_RGBA_SRGB: return GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT;
+            case TFormat::BC3_RGBA_UNORM: return GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+            case TFormat::BC3_RGBA_SRGB: return GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
             */
-        case EFormat::BC4_R_UNORM:
+        case TFormat::BC4_R_UNORM:
             return GL_COMPRESSED_RED_RGTC1;
-        case EFormat::BC4_R_SNORM:
+        case TFormat::BC4_R_SNORM:
             return GL_COMPRESSED_SIGNED_RED_RGTC1;
-        case EFormat::BC5_RG_UNORM:
+        case TFormat::BC5_RG_UNORM:
             return GL_COMPRESSED_RG_RGTC2;
-        case EFormat::BC5_RG_SNORM:
+        case TFormat::BC5_RG_SNORM:
             return GL_COMPRESSED_SIGNED_RG_RGTC2;
-        case EFormat::BC6H_RGB_UFLOAT:
+        case TFormat::BC6H_RGB_UFLOAT:
             return GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT;
-        case EFormat::BC6H_RGB_SFLOAT:
+        case TFormat::BC6H_RGB_SFLOAT:
             return GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT;
-        case EFormat::BC7_RGBA_UNORM:
+        case TFormat::BC7_RGBA_UNORM:
             return GL_COMPRESSED_RGBA_BPTC_UNORM;
-        case EFormat::BC7_RGBA_SRGB:
+        case TFormat::BC7_RGBA_SRGB:
             return GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
         default:
             std::string message = "Format not mappable";
@@ -361,224 +360,224 @@ auto FormatToGL(EFormat format) -> uint32_t {
     }
 }
 
-auto FormatToBaseTypeClass(EFormat format) -> EBaseTypeClass {
+auto FormatToBaseTypeClass(TFormat format) -> TBaseTypeClass {
     switch (format) {
-        case EFormat::R8_UNORM:
-        case EFormat::R8_SNORM:
-        case EFormat::R16_UNORM:
-        case EFormat::R16_SNORM:
-        case EFormat::R8G8_UNORM:
-        case EFormat::R8G8_SNORM:
-        case EFormat::R16G16_UNORM:
-        case EFormat::R16G16_SNORM:
-        case EFormat::R3G3B2_UNORM:
-        case EFormat::R4G4B4_UNORM:
-        case EFormat::R5G5B5_UNORM:
-        case EFormat::R8G8B8_UNORM:
-        case EFormat::R8G8B8_SNORM:
-        case EFormat::R10G10B10_UNORM:
-        case EFormat::R12G12B12_UNORM:
-        case EFormat::R16G16B16_SNORM:
-        case EFormat::R2G2B2A2_UNORM:
-        case EFormat::R4G4B4A4_UNORM:
-        case EFormat::R5G5B5A1_UNORM:
-        case EFormat::R8G8B8A8_UNORM:
-        case EFormat::R8G8B8A8_SNORM:
-        case EFormat::R10G10B10A2_UNORM:
-        case EFormat::R12G12B12A12_UNORM:
-        case EFormat::R16G16B16A16_UNORM:
-        case EFormat::R8G8B8_SRGB:
-        case EFormat::R8G8B8A8_SRGB:
-        case EFormat::R16_FLOAT:
-        case EFormat::R16G16_FLOAT:
-        case EFormat::R16G16B16_FLOAT:
-        case EFormat::R16G16B16A16_FLOAT:
-        case EFormat::R32_FLOAT:
-        case EFormat::R32G32_FLOAT:
-        case EFormat::R32G32B32_FLOAT:
-        case EFormat::R32G32B32A32_FLOAT:
-        case EFormat::R11G11B10_FLOAT:
-        case EFormat::R9G9B9_E5:
-            return EBaseTypeClass::Float;
-        case EFormat::R8_SINT:
-        case EFormat::R16_SINT:
-        case EFormat::R32_SINT:
-        case EFormat::R8G8_SINT:
-        case EFormat::R16G16_SINT:
-        case EFormat::R32G32_SINT:
-        case EFormat::R8G8B8_SINT:
-        case EFormat::R16G16B16_SINT:
-        case EFormat::R32G32B32_SINT:
-        case EFormat::R8G8B8A8_SINT:
-        case EFormat::R16G16B16A16_SINT:
-        case EFormat::R32G32B32A32_SINT:
-            return EBaseTypeClass::Integer;
-        case EFormat::R10G10B10A2_UINT:
-        case EFormat::R8_UINT:
-        case EFormat::R16_UINT:
-        case EFormat::R32_UINT:
-        case EFormat::R8G8_UINT:
-        case EFormat::R16G16_UINT:
-        case EFormat::R32G32_UINT:
-        case EFormat::R8G8B8_UINT:
-        case EFormat::R16G16B16_UINT:
-        case EFormat::R32G32B32_UINT:
-        case EFormat::R8G8B8A8_UINT:
-        case EFormat::R16G16B16A16_UINT:
-        case EFormat::R32G32B32A32_UINT:
-            return EBaseTypeClass::UnsignedInteger;
+        case TFormat::R8_UNORM:
+        case TFormat::R8_SNORM:
+        case TFormat::R16_UNORM:
+        case TFormat::R16_SNORM:
+        case TFormat::R8G8_UNORM:
+        case TFormat::R8G8_SNORM:
+        case TFormat::R16G16_UNORM:
+        case TFormat::R16G16_SNORM:
+        case TFormat::R3G3B2_UNORM:
+        case TFormat::R4G4B4_UNORM:
+        case TFormat::R5G5B5_UNORM:
+        case TFormat::R8G8B8_UNORM:
+        case TFormat::R8G8B8_SNORM:
+        case TFormat::R10G10B10_UNORM:
+        case TFormat::R12G12B12_UNORM:
+        case TFormat::R16G16B16_SNORM:
+        case TFormat::R2G2B2A2_UNORM:
+        case TFormat::R4G4B4A4_UNORM:
+        case TFormat::R5G5B5A1_UNORM:
+        case TFormat::R8G8B8A8_UNORM:
+        case TFormat::R8G8B8A8_SNORM:
+        case TFormat::R10G10B10A2_UNORM:
+        case TFormat::R12G12B12A12_UNORM:
+        case TFormat::R16G16B16A16_UNORM:
+        case TFormat::R8G8B8_SRGB:
+        case TFormat::R8G8B8A8_SRGB:
+        case TFormat::R16_FLOAT:
+        case TFormat::R16G16_FLOAT:
+        case TFormat::R16G16B16_FLOAT:
+        case TFormat::R16G16B16A16_FLOAT:
+        case TFormat::R32_FLOAT:
+        case TFormat::R32G32_FLOAT:
+        case TFormat::R32G32B32_FLOAT:
+        case TFormat::R32G32B32A32_FLOAT:
+        case TFormat::R11G11B10_FLOAT:
+        case TFormat::R9G9B9_E5:
+            return TBaseTypeClass::Float;
+        case TFormat::R8_SINT:
+        case TFormat::R16_SINT:
+        case TFormat::R32_SINT:
+        case TFormat::R8G8_SINT:
+        case TFormat::R16G16_SINT:
+        case TFormat::R32G32_SINT:
+        case TFormat::R8G8B8_SINT:
+        case TFormat::R16G16B16_SINT:
+        case TFormat::R32G32B32_SINT:
+        case TFormat::R8G8B8A8_SINT:
+        case TFormat::R16G16B16A16_SINT:
+        case TFormat::R32G32B32A32_SINT:
+            return TBaseTypeClass::Integer;
+        case TFormat::R10G10B10A2_UINT:
+        case TFormat::R8_UINT:
+        case TFormat::R16_UINT:
+        case TFormat::R32_UINT:
+        case TFormat::R8G8_UINT:
+        case TFormat::R16G16_UINT:
+        case TFormat::R32G32_UINT:
+        case TFormat::R8G8B8_UINT:
+        case TFormat::R16G16B16_UINT:
+        case TFormat::R32G32B32_UINT:
+        case TFormat::R8G8B8A8_UINT:
+        case TFormat::R16G16B16A16_UINT:
+        case TFormat::R32G32B32A32_UINT:
+            return TBaseTypeClass::UnsignedInteger;
         default:
             std::unreachable();
     }
 }
 
-auto FormatToUploadFormat(EFormat format) -> EUploadFormat {
+auto FormatToUploadFormat(TFormat format) -> TUploadFormat {
 
     switch (format) {
-        case EFormat::R8_UNORM:
-        case EFormat::R8_SNORM:
-        case EFormat::R16_UNORM:
-        case EFormat::R16_SNORM:
-        case EFormat::R16_FLOAT:
-        case EFormat::R32_FLOAT:
-            return EUploadFormat::R;
-        case EFormat::R8_SINT:
-        case EFormat::R8_UINT:
-        case EFormat::R16_SINT:
-        case EFormat::R16_UINT:
-        case EFormat::R32_SINT:
-        case EFormat::R32_UINT:
-            return EUploadFormat::RInteger;
-        case EFormat::R8G8_UNORM:
-        case EFormat::R8G8_SNORM:
-        case EFormat::R16G16_UNORM:
-        case EFormat::R16G16_SNORM:
-        case EFormat::R16G16_FLOAT:
-        case EFormat::R32G32_FLOAT:
-            return EUploadFormat::Rg;
-        case EFormat::R8G8_SINT:
-        case EFormat::R8G8_UINT:
-        case EFormat::R16G16_SINT:
-        case EFormat::R16G16_UINT:
-        case EFormat::R32G32_SINT:
-        case EFormat::R32G32_UINT:
-            return EUploadFormat::RgInteger;
-        case EFormat::R3G3B2_UNORM:
-        case EFormat::R4G4B4_UNORM:
-        case EFormat::R5G5B5_UNORM:
-        case EFormat::R8G8B8_UNORM:
-        case EFormat::R8G8B8_SNORM:
-        case EFormat::R10G10B10_UNORM:
-        case EFormat::R12G12B12_UNORM:
-        case EFormat::R16G16B16_SNORM:
-        case EFormat::R8G8B8_SRGB:
-        case EFormat::R16G16B16_FLOAT:
-        case EFormat::R9G9B9_E5:
-        case EFormat::R32G32B32_FLOAT:
-        case EFormat::R11G11B10_FLOAT:
-            return EUploadFormat::Rgb;
-        case EFormat::R8G8B8_SINT:
-        case EFormat::R8G8B8_UINT:
-        case EFormat::R16G16B16_SINT:
-        case EFormat::R16G16B16_UINT:
-        case EFormat::R32G32B32_SINT:
-        case EFormat::R32G32B32_UINT:
-            return EUploadFormat::RgbInteger;
-        case EFormat::R2G2B2A2_UNORM:
-        case EFormat::R4G4B4A4_UNORM:
-        case EFormat::R5G5B5A1_UNORM:
-        case EFormat::R8G8B8A8_UNORM:
-        case EFormat::R8G8B8A8_SNORM:
-        case EFormat::R10G10B10A2_UNORM:
-        case EFormat::R12G12B12A12_UNORM:
-        case EFormat::R16G16B16A16_UNORM:
-        case EFormat::R16G16B16A16_SNORM:
-        case EFormat::R8G8B8A8_SRGB:
-        case EFormat::R16G16B16A16_FLOAT:
-        case EFormat::R32G32B32A32_FLOAT:
-            return EUploadFormat::Rgba;
-        case EFormat::R10G10B10A2_UINT:
-        case EFormat::R8G8B8A8_SINT:
-        case EFormat::R8G8B8A8_UINT:
-        case EFormat::R16G16B16A16_SINT:
-        case EFormat::R16G16B16A16_UINT:
-        case EFormat::R32G32B32A32_SINT:
-        case EFormat::R32G32B32A32_UINT:
-            return EUploadFormat::RgbaInteger;
-        case EFormat::D32_FLOAT:
-        case EFormat::D32_UNORM:
-        case EFormat::D24_UNORM:
-        case EFormat::D16_UNORM:
-            return EUploadFormat::Depth;
-        case EFormat::D32_FLOAT_S8_UINT:
-        case EFormat::D24_UNORM_S8_UINT:
-            return EUploadFormat::DepthStencilIndex;
-        case EFormat::S8_UINT:
-            return EUploadFormat::StencilIndex;
+        case TFormat::R8_UNORM:
+        case TFormat::R8_SNORM:
+        case TFormat::R16_UNORM:
+        case TFormat::R16_SNORM:
+        case TFormat::R16_FLOAT:
+        case TFormat::R32_FLOAT:
+            return TUploadFormat::R;
+        case TFormat::R8_SINT:
+        case TFormat::R8_UINT:
+        case TFormat::R16_SINT:
+        case TFormat::R16_UINT:
+        case TFormat::R32_SINT:
+        case TFormat::R32_UINT:
+            return TUploadFormat::RInteger;
+        case TFormat::R8G8_UNORM:
+        case TFormat::R8G8_SNORM:
+        case TFormat::R16G16_UNORM:
+        case TFormat::R16G16_SNORM:
+        case TFormat::R16G16_FLOAT:
+        case TFormat::R32G32_FLOAT:
+            return TUploadFormat::Rg;
+        case TFormat::R8G8_SINT:
+        case TFormat::R8G8_UINT:
+        case TFormat::R16G16_SINT:
+        case TFormat::R16G16_UINT:
+        case TFormat::R32G32_SINT:
+        case TFormat::R32G32_UINT:
+            return TUploadFormat::RgInteger;
+        case TFormat::R3G3B2_UNORM:
+        case TFormat::R4G4B4_UNORM:
+        case TFormat::R5G5B5_UNORM:
+        case TFormat::R8G8B8_UNORM:
+        case TFormat::R8G8B8_SNORM:
+        case TFormat::R10G10B10_UNORM:
+        case TFormat::R12G12B12_UNORM:
+        case TFormat::R16G16B16_SNORM:
+        case TFormat::R8G8B8_SRGB:
+        case TFormat::R16G16B16_FLOAT:
+        case TFormat::R9G9B9_E5:
+        case TFormat::R32G32B32_FLOAT:
+        case TFormat::R11G11B10_FLOAT:
+            return TUploadFormat::Rgb;
+        case TFormat::R8G8B8_SINT:
+        case TFormat::R8G8B8_UINT:
+        case TFormat::R16G16B16_SINT:
+        case TFormat::R16G16B16_UINT:
+        case TFormat::R32G32B32_SINT:
+        case TFormat::R32G32B32_UINT:
+            return TUploadFormat::RgbInteger;
+        case TFormat::R2G2B2A2_UNORM:
+        case TFormat::R4G4B4A4_UNORM:
+        case TFormat::R5G5B5A1_UNORM:
+        case TFormat::R8G8B8A8_UNORM:
+        case TFormat::R8G8B8A8_SNORM:
+        case TFormat::R10G10B10A2_UNORM:
+        case TFormat::R12G12B12A12_UNORM:
+        case TFormat::R16G16B16A16_UNORM:
+        case TFormat::R16G16B16A16_SNORM:
+        case TFormat::R8G8B8A8_SRGB:
+        case TFormat::R16G16B16A16_FLOAT:
+        case TFormat::R32G32B32A32_FLOAT:
+            return TUploadFormat::Rgba;
+        case TFormat::R10G10B10A2_UINT:
+        case TFormat::R8G8B8A8_SINT:
+        case TFormat::R8G8B8A8_UINT:
+        case TFormat::R16G16B16A16_SINT:
+        case TFormat::R16G16B16A16_UINT:
+        case TFormat::R32G32B32A32_SINT:
+        case TFormat::R32G32B32A32_UINT:
+            return TUploadFormat::RgbaInteger;
+        case TFormat::D32_FLOAT:
+        case TFormat::D32_UNORM:
+        case TFormat::D24_UNORM:
+        case TFormat::D16_UNORM:
+            return TUploadFormat::Depth;
+        case TFormat::D32_FLOAT_S8_UINT:
+        case TFormat::D24_UNORM_S8_UINT:
+            return TUploadFormat::DepthStencilIndex;
+        case TFormat::S8_UINT:
+            return TUploadFormat::StencilIndex;
         default:
             std::unreachable();
     }
 }
 
-auto FormatToUnderlyingOpenGLType(EFormat format) -> uint32_t {
+auto FormatToUnderlyingOpenGLType(TFormat format) -> uint32_t {
 
     switch (format) {
-        case EFormat::R8_UNORM:
-        case EFormat::R8G8_UNORM:
-        case EFormat::R8G8B8_UNORM:
-        case EFormat::R8G8B8A8_UNORM:
-        case EFormat::R8_UINT:
-        case EFormat::R8G8_UINT:
-        case EFormat::R8G8B8_UINT:
-        case EFormat::R8G8B8A8_UINT:
-        case EFormat::R8G8B8A8_SRGB:
-        case EFormat::R8G8B8_SRGB:
+        case TFormat::R8_UNORM:
+        case TFormat::R8G8_UNORM:
+        case TFormat::R8G8B8_UNORM:
+        case TFormat::R8G8B8A8_UNORM:
+        case TFormat::R8_UINT:
+        case TFormat::R8G8_UINT:
+        case TFormat::R8G8B8_UINT:
+        case TFormat::R8G8B8A8_UINT:
+        case TFormat::R8G8B8A8_SRGB:
+        case TFormat::R8G8B8_SRGB:
             return GL_UNSIGNED_BYTE;
-        case EFormat::R8_SNORM:
-        case EFormat::R8G8_SNORM:
-        case EFormat::R8G8B8_SNORM:
-        case EFormat::R8G8B8A8_SNORM:
-        case EFormat::R8_SINT:
-        case EFormat::R8G8_SINT:
-        case EFormat::R8G8B8_SINT:
-        case EFormat::R8G8B8A8_SINT:
+        case TFormat::R8_SNORM:
+        case TFormat::R8G8_SNORM:
+        case TFormat::R8G8B8_SNORM:
+        case TFormat::R8G8B8A8_SNORM:
+        case TFormat::R8_SINT:
+        case TFormat::R8G8_SINT:
+        case TFormat::R8G8B8_SINT:
+        case TFormat::R8G8B8A8_SINT:
             return GL_BYTE;
-        case EFormat::R16_UNORM:
-        case EFormat::R16G16_UNORM:
-        case EFormat::R16G16B16A16_UNORM:
-        case EFormat::R16_UINT:
-        case EFormat::R16G16_UINT:
-        case EFormat::R16G16B16_UINT:
-        case EFormat::R16G16B16A16_UINT:
+        case TFormat::R16_UNORM:
+        case TFormat::R16G16_UNORM:
+        case TFormat::R16G16B16A16_UNORM:
+        case TFormat::R16_UINT:
+        case TFormat::R16G16_UINT:
+        case TFormat::R16G16B16_UINT:
+        case TFormat::R16G16B16A16_UINT:
             return GL_UNSIGNED_SHORT;
-        case EFormat::R16_SNORM:
-        case EFormat::R16G16_SNORM:
-        case EFormat::R16G16B16_SNORM:
-        case EFormat::R16G16B16A16_SNORM:
-        case EFormat::R16_SINT:
-        case EFormat::R16G16_SINT:
-        case EFormat::R16G16B16_SINT:
-        case EFormat::R16G16B16A16_SINT:
+        case TFormat::R16_SNORM:
+        case TFormat::R16G16_SNORM:
+        case TFormat::R16G16B16_SNORM:
+        case TFormat::R16G16B16A16_SNORM:
+        case TFormat::R16_SINT:
+        case TFormat::R16G16_SINT:
+        case TFormat::R16G16B16_SINT:
+        case TFormat::R16G16B16A16_SINT:
             return GL_SHORT;
-        case EFormat::R16_FLOAT:
-        case EFormat::R16G16_FLOAT:
-        case EFormat::R16G16B16_FLOAT:
-        case EFormat::R16G16B16A16_FLOAT:
+        case TFormat::R16_FLOAT:
+        case TFormat::R16G16_FLOAT:
+        case TFormat::R16G16B16_FLOAT:
+        case TFormat::R16G16B16A16_FLOAT:
             return GL_HALF_FLOAT;
-        case EFormat::R32_FLOAT:
-        case EFormat::R32G32_FLOAT:
-        case EFormat::R32G32B32_FLOAT:
-        case EFormat::R32G32B32A32_FLOAT:
+        case TFormat::R32_FLOAT:
+        case TFormat::R32G32_FLOAT:
+        case TFormat::R32G32B32_FLOAT:
+        case TFormat::R32G32B32A32_FLOAT:
             return GL_FLOAT;
-        case EFormat::R32_SINT:
-        case EFormat::R32G32_SINT:
-        case EFormat::R32G32B32_SINT:
-        case EFormat::R32G32B32A32_SINT:
+        case TFormat::R32_SINT:
+        case TFormat::R32G32_SINT:
+        case TFormat::R32G32B32_SINT:
+        case TFormat::R32G32B32A32_SINT:
             return GL_INT;
-        case EFormat::R32_UINT:
-        case EFormat::R32G32_UINT:
-        case EFormat::R32G32B32_UINT:
-        case EFormat::R32G32B32A32_UINT:
+        case TFormat::R32_UINT:
+        case TFormat::R32G32_UINT:
+        case TFormat::R32G32B32_UINT:
+        case TFormat::R32G32B32A32_UINT:
             return GL_UNSIGNED_INT;
         default:
             std::string message = "Format not mappable to opengl type";
@@ -588,206 +587,206 @@ auto FormatToUnderlyingOpenGLType(EFormat format) -> uint32_t {
     }
 }
 
-auto FormatToComponentCount(EFormat format) -> int32_t {
+auto FormatToComponentCount(TFormat format) -> int32_t {
     switch (format) {
-        case EFormat::R8_UNORM:
-        case EFormat::R8_SNORM:
-        case EFormat::R16_UNORM:
-        case EFormat::R16_SNORM:
-        case EFormat::R16_FLOAT:
-        case EFormat::R32_FLOAT:
-        case EFormat::R8_SINT:
-        case EFormat::R16_SINT:
-        case EFormat::R32_SINT:
-        case EFormat::R8_UINT:
-        case EFormat::R16_UINT:
-        case EFormat::R32_UINT:
+        case TFormat::R8_UNORM:
+        case TFormat::R8_SNORM:
+        case TFormat::R16_UNORM:
+        case TFormat::R16_SNORM:
+        case TFormat::R16_FLOAT:
+        case TFormat::R32_FLOAT:
+        case TFormat::R8_SINT:
+        case TFormat::R16_SINT:
+        case TFormat::R32_SINT:
+        case TFormat::R8_UINT:
+        case TFormat::R16_UINT:
+        case TFormat::R32_UINT:
             return 1;
-        case EFormat::R8G8_UNORM:
-        case EFormat::R8G8_SNORM:
-        case EFormat::R16G16_FLOAT:
-        case EFormat::R16G16_UNORM:
-        case EFormat::R16G16_SNORM:
-        case EFormat::R32G32_FLOAT:
-        case EFormat::R8G8_SINT:
-        case EFormat::R16G16_SINT:
-        case EFormat::R32G32_SINT:
-        case EFormat::R8G8_UINT:
-        case EFormat::R16G16_UINT:
-        case EFormat::R32G32_UINT:
+        case TFormat::R8G8_UNORM:
+        case TFormat::R8G8_SNORM:
+        case TFormat::R16G16_FLOAT:
+        case TFormat::R16G16_UNORM:
+        case TFormat::R16G16_SNORM:
+        case TFormat::R32G32_FLOAT:
+        case TFormat::R8G8_SINT:
+        case TFormat::R16G16_SINT:
+        case TFormat::R32G32_SINT:
+        case TFormat::R8G8_UINT:
+        case TFormat::R16G16_UINT:
+        case TFormat::R32G32_UINT:
             return 2;
-        case EFormat::R8G8B8_UNORM:
-        case EFormat::R8G8B8_SNORM:
-        case EFormat::R16G16B16_SNORM:
-        case EFormat::R16G16B16_FLOAT:
-        case EFormat::R32G32B32_FLOAT:
-        case EFormat::R8G8B8_SINT:
-        case EFormat::R16G16B16_SINT:
-        case EFormat::R32G32B32_SINT:
-        case EFormat::R8G8B8_UINT:
-        case EFormat::R16G16B16_UINT:
-        case EFormat::R32G32B32_UINT:
+        case TFormat::R8G8B8_UNORM:
+        case TFormat::R8G8B8_SNORM:
+        case TFormat::R16G16B16_SNORM:
+        case TFormat::R16G16B16_FLOAT:
+        case TFormat::R32G32B32_FLOAT:
+        case TFormat::R8G8B8_SINT:
+        case TFormat::R16G16B16_SINT:
+        case TFormat::R32G32B32_SINT:
+        case TFormat::R8G8B8_UINT:
+        case TFormat::R16G16B16_UINT:
+        case TFormat::R32G32B32_UINT:
             return 3;
-        case EFormat::R8G8B8A8_UNORM:
-        case EFormat::R8G8B8A8_SNORM:
-        case EFormat::R16G16B16A16_UNORM:
-        case EFormat::R16G16B16A16_FLOAT:
-        case EFormat::R32G32B32A32_FLOAT:
-        case EFormat::R8G8B8A8_SINT:
-        case EFormat::R16G16B16A16_SINT:
-        case EFormat::R32G32B32A32_SINT:
-        case EFormat::R10G10B10A2_UINT:
-        case EFormat::R8G8B8A8_UINT:
-        case EFormat::R16G16B16A16_UINT:
-        case EFormat::R32G32B32A32_UINT:
+        case TFormat::R8G8B8A8_UNORM:
+        case TFormat::R8G8B8A8_SNORM:
+        case TFormat::R16G16B16A16_UNORM:
+        case TFormat::R16G16B16A16_FLOAT:
+        case TFormat::R32G32B32A32_FLOAT:
+        case TFormat::R8G8B8A8_SINT:
+        case TFormat::R16G16B16A16_SINT:
+        case TFormat::R32G32B32A32_SINT:
+        case TFormat::R10G10B10A2_UINT:
+        case TFormat::R8G8B8A8_UINT:
+        case TFormat::R16G16B16A16_UINT:
+        case TFormat::R32G32B32A32_UINT:
             return 4;
         default:
             std::unreachable();
     }
 }
 
-auto IsFormatNormalized(EFormat format) -> int32_t {
+auto IsFormatNormalized(TFormat format) -> int32_t {
 
     switch (format) {
-        case EFormat::R8_UNORM:
-        case EFormat::R8_SNORM:
-        case EFormat::R16_UNORM:
-        case EFormat::R16_SNORM:
-        case EFormat::R8G8_UNORM:
-        case EFormat::R8G8_SNORM:
-        case EFormat::R16G16_UNORM:
-        case EFormat::R16G16_SNORM:
-        case EFormat::R8G8B8_UNORM:
-        case EFormat::R8G8B8_SNORM:
-        case EFormat::R16G16B16_SNORM:
-        case EFormat::R8G8B8A8_UNORM:
-        case EFormat::R8G8B8A8_SNORM:
-        case EFormat::R16G16B16A16_UNORM:
+        case TFormat::R8_UNORM:
+        case TFormat::R8_SNORM:
+        case TFormat::R16_UNORM:
+        case TFormat::R16_SNORM:
+        case TFormat::R8G8_UNORM:
+        case TFormat::R8G8_SNORM:
+        case TFormat::R16G16_UNORM:
+        case TFormat::R16G16_SNORM:
+        case TFormat::R8G8B8_UNORM:
+        case TFormat::R8G8B8_SNORM:
+        case TFormat::R16G16B16_SNORM:
+        case TFormat::R8G8B8A8_UNORM:
+        case TFormat::R8G8B8A8_SNORM:
+        case TFormat::R16G16B16A16_UNORM:
             return GL_TRUE;
-        case EFormat::R16_FLOAT:
-        case EFormat::R32_FLOAT:
-        case EFormat::R8_SINT:
-        case EFormat::R16_SINT:
-        case EFormat::R32_SINT:
-        case EFormat::R8_UINT:
-        case EFormat::R16_UINT:
-        case EFormat::R32_UINT:
-        case EFormat::R16G16_FLOAT:
-        case EFormat::R32G32_FLOAT:
-        case EFormat::R8G8_SINT:
-        case EFormat::R16G16_SINT:
-        case EFormat::R32G32_SINT:
-        case EFormat::R8G8_UINT:
-        case EFormat::R16G16_UINT:
-        case EFormat::R32G32_UINT:
-        case EFormat::R16G16B16_FLOAT:
-        case EFormat::R32G32B32_FLOAT:
-        case EFormat::R8G8B8_SINT:
-        case EFormat::R16G16B16_SINT:
-        case EFormat::R32G32B32_SINT:
-        case EFormat::R8G8B8_UINT:
-        case EFormat::R16G16B16_UINT:
-        case EFormat::R32G32B32_UINT:
-        case EFormat::R16G16B16A16_FLOAT:
-        case EFormat::R32G32B32A32_FLOAT:
-        case EFormat::R8G8B8A8_SINT:
-        case EFormat::R16G16B16A16_SINT:
-        case EFormat::R32G32B32A32_SINT:
-        case EFormat::R10G10B10A2_UINT:
-        case EFormat::R8G8B8A8_UINT:
-        case EFormat::R16G16B16A16_UINT:
-        case EFormat::R32G32B32A32_UINT:
+        case TFormat::R16_FLOAT:
+        case TFormat::R32_FLOAT:
+        case TFormat::R8_SINT:
+        case TFormat::R16_SINT:
+        case TFormat::R32_SINT:
+        case TFormat::R8_UINT:
+        case TFormat::R16_UINT:
+        case TFormat::R32_UINT:
+        case TFormat::R16G16_FLOAT:
+        case TFormat::R32G32_FLOAT:
+        case TFormat::R8G8_SINT:
+        case TFormat::R16G16_SINT:
+        case TFormat::R32G32_SINT:
+        case TFormat::R8G8_UINT:
+        case TFormat::R16G16_UINT:
+        case TFormat::R32G32_UINT:
+        case TFormat::R16G16B16_FLOAT:
+        case TFormat::R32G32B32_FLOAT:
+        case TFormat::R8G8B8_SINT:
+        case TFormat::R16G16B16_SINT:
+        case TFormat::R32G32B32_SINT:
+        case TFormat::R8G8B8_UINT:
+        case TFormat::R16G16B16_UINT:
+        case TFormat::R32G32B32_UINT:
+        case TFormat::R16G16B16A16_FLOAT:
+        case TFormat::R32G32B32A32_FLOAT:
+        case TFormat::R8G8B8A8_SINT:
+        case TFormat::R16G16B16A16_SINT:
+        case TFormat::R32G32B32A32_SINT:
+        case TFormat::R10G10B10A2_UINT:
+        case TFormat::R8G8B8A8_UINT:
+        case TFormat::R16G16B16A16_UINT:
+        case TFormat::R32G32B32A32_UINT:
             return GL_FALSE;
         default:
             std::unreachable();
     }
 }
 
-auto FormatToFormatClass(EFormat format) -> EFormatClass {
+auto FormatToFormatClass(TFormat format) -> TFormatClass {
     switch (format) {
-        case EFormat::R8_UNORM:
-        case EFormat::R8_SNORM:
-        case EFormat::R16_UNORM:
-        case EFormat::R16_SNORM:
-        case EFormat::R8G8_UNORM:
-        case EFormat::R8G8_SNORM:
-        case EFormat::R16G16_UNORM:
-        case EFormat::R16G16_SNORM:
-        case EFormat::R8G8B8_UNORM:
-        case EFormat::R8G8B8_SNORM:
-        case EFormat::R16G16B16_SNORM:
-        case EFormat::R8G8B8A8_UNORM:
-        case EFormat::R8G8B8A8_SNORM:
-        case EFormat::R16G16B16A16_UNORM:
-        case EFormat::R16_FLOAT:
-        case EFormat::R16G16_FLOAT:
-        case EFormat::R16G16B16_FLOAT:
-        case EFormat::R16G16B16A16_FLOAT:
-        case EFormat::R32_FLOAT:
-        case EFormat::R32G32_FLOAT:
-        case EFormat::R32G32B32_FLOAT:
-        case EFormat::R32G32B32A32_FLOAT:
-            return EFormatClass::Float;
-        case EFormat::R8_SINT:
-        case EFormat::R16_SINT:
-        case EFormat::R32_SINT:
-        case EFormat::R8G8_SINT:
-        case EFormat::R16G16_SINT:
-        case EFormat::R32G32_SINT:
-        case EFormat::R8G8B8_SINT:
-        case EFormat::R16G16B16_SINT:
-        case EFormat::R32G32B32_SINT:
-        case EFormat::R8G8B8A8_SINT:
-        case EFormat::R16G16B16A16_SINT:
-        case EFormat::R32G32B32A32_SINT:
-        case EFormat::R10G10B10A2_UINT:
-        case EFormat::R8_UINT:
-        case EFormat::R16_UINT:
-        case EFormat::R32_UINT:
-        case EFormat::R8G8_UINT:
-        case EFormat::R16G16_UINT:
-        case EFormat::R32G32_UINT:
-        case EFormat::R8G8B8_UINT:
-        case EFormat::R16G16B16_UINT:
-        case EFormat::R32G32B32_UINT:
-        case EFormat::R8G8B8A8_UINT:
-        case EFormat::R16G16B16A16_UINT:
-        case EFormat::R32G32B32A32_UINT:
-            return EFormatClass::Integer;
+        case TFormat::R8_UNORM:
+        case TFormat::R8_SNORM:
+        case TFormat::R16_UNORM:
+        case TFormat::R16_SNORM:
+        case TFormat::R8G8_UNORM:
+        case TFormat::R8G8_SNORM:
+        case TFormat::R16G16_UNORM:
+        case TFormat::R16G16_SNORM:
+        case TFormat::R8G8B8_UNORM:
+        case TFormat::R8G8B8_SNORM:
+        case TFormat::R16G16B16_SNORM:
+        case TFormat::R8G8B8A8_UNORM:
+        case TFormat::R8G8B8A8_SNORM:
+        case TFormat::R16G16B16A16_UNORM:
+        case TFormat::R16_FLOAT:
+        case TFormat::R16G16_FLOAT:
+        case TFormat::R16G16B16_FLOAT:
+        case TFormat::R16G16B16A16_FLOAT:
+        case TFormat::R32_FLOAT:
+        case TFormat::R32G32_FLOAT:
+        case TFormat::R32G32B32_FLOAT:
+        case TFormat::R32G32B32A32_FLOAT:
+            return TFormatClass::Float;
+        case TFormat::R8_SINT:
+        case TFormat::R16_SINT:
+        case TFormat::R32_SINT:
+        case TFormat::R8G8_SINT:
+        case TFormat::R16G16_SINT:
+        case TFormat::R32G32_SINT:
+        case TFormat::R8G8B8_SINT:
+        case TFormat::R16G16B16_SINT:
+        case TFormat::R32G32B32_SINT:
+        case TFormat::R8G8B8A8_SINT:
+        case TFormat::R16G16B16A16_SINT:
+        case TFormat::R32G32B32A32_SINT:
+        case TFormat::R10G10B10A2_UINT:
+        case TFormat::R8_UINT:
+        case TFormat::R16_UINT:
+        case TFormat::R32_UINT:
+        case TFormat::R8G8_UINT:
+        case TFormat::R16G16_UINT:
+        case TFormat::R32G32_UINT:
+        case TFormat::R8G8B8_UINT:
+        case TFormat::R16G16B16_UINT:
+        case TFormat::R32G32B32_UINT:
+        case TFormat::R8G8B8A8_UINT:
+        case TFormat::R16G16B16A16_UINT:
+        case TFormat::R32G32B32A32_UINT:
+            return TFormatClass::Integer;
         default:
-            return EFormatClass::Long;
+            return TFormatClass::Long;
     }
 }
 
-constexpr auto TextureTypeToDimension(ETextureType textureType) -> uint32_t {
+constexpr auto TextureTypeToDimension(TTextureType textureType) -> uint32_t {
 
     switch (textureType) {
-        case ETextureType::Texture1D:
+        case TTextureType::Texture1D:
             return 1;
-        case ETextureType::Texture2D:
-        case ETextureType::Texture2DMultisample:
-        case ETextureType::Texture1DArray:
+        case TTextureType::Texture2D:
+        case TTextureType::Texture2DMultisample:
+        case TTextureType::Texture1DArray:
             return 2;
-        case ETextureType::Texture3D:
-        case ETextureType::Texture2DArray:
-        case ETextureType::Texture2DMultisampleArray:
-        case ETextureType::TextureCube:
-        case ETextureType::TextureCubeArray:
+        case TTextureType::Texture3D:
+        case TTextureType::Texture2DArray:
+        case TTextureType::Texture2DMultisampleArray:
+        case TTextureType::TextureCube:
+        case TTextureType::TextureCubeArray:
             return 3;
         default:
             std::unreachable();
     }
 }
 
-inline auto GetTexture(STextureId id) -> STexture& {
+inline auto GetTexture(TTextureId id) -> TTexture& {
 
-    assert(id != STextureId::Invalid);
+    assert(id != TTextureId::Invalid);
     return g_textures[size_t(id)];
 }
 
-auto CreateTexture(const SCreateTextureDescriptor& createTextureDescriptor) -> STextureId {
+auto CreateTexture(const TCreateTextureDescriptor& createTextureDescriptor) -> TTextureId {
 
-    STexture texture = {};
+    TTexture texture = {};
 
     glCreateTextures(TextureTypeToGL(createTextureDescriptor.TextureType), 1, &texture.Id);
     if (!createTextureDescriptor.Label.empty()) {
@@ -799,20 +798,20 @@ auto CreateTexture(const SCreateTextureDescriptor& createTextureDescriptor) -> S
     texture.TextureType = createTextureDescriptor.TextureType;
 
     switch (createTextureDescriptor.TextureType) {
-        case ETextureType::Texture1D:
+        case TTextureType::Texture1D:
             glTextureStorage1D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
                                static_cast<int32_t>(createTextureDescriptor.Extent.Width));
             break;
-        case ETextureType::Texture2D:
+        case TTextureType::Texture2D:
             glTextureStorage2D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
                                static_cast<int32_t>(createTextureDescriptor.Extent.Width),
                                static_cast<int32_t>(createTextureDescriptor.Extent.Height));
             break;
-        case ETextureType::Texture3D:
+        case TTextureType::Texture3D:
             glTextureStorage3D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
@@ -820,14 +819,14 @@ auto CreateTexture(const SCreateTextureDescriptor& createTextureDescriptor) -> S
                                static_cast<int32_t>(createTextureDescriptor.Extent.Height),
                                static_cast<int32_t>(createTextureDescriptor.Extent.Depth));
             break;
-        case ETextureType::Texture1DArray:
+        case TTextureType::Texture1DArray:
             glTextureStorage2D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
                                static_cast<int32_t>(createTextureDescriptor.Extent.Width),
                                createTextureDescriptor.Layers);
             break;
-        case ETextureType::Texture2DArray:
+        case TTextureType::Texture2DArray:
             glTextureStorage3D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
@@ -835,14 +834,14 @@ auto CreateTexture(const SCreateTextureDescriptor& createTextureDescriptor) -> S
                                static_cast<int32_t>(createTextureDescriptor.Extent.Height),
                                createTextureDescriptor.Layers);
             break;
-        case ETextureType::TextureCube:
+        case TTextureType::TextureCube:
             glTextureStorage2D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
                                static_cast<int32_t>(createTextureDescriptor.Extent.Width),
                                static_cast<int32_t>(createTextureDescriptor.Extent.Height));
             break;
-        case ETextureType::TextureCubeArray:
+        case TTextureType::TextureCubeArray:
             glTextureStorage3D(texture.Id,
                                createTextureDescriptor.MipMapLevels,
                                FormatToGL(createTextureDescriptor.Format),
@@ -850,7 +849,7 @@ auto CreateTexture(const SCreateTextureDescriptor& createTextureDescriptor) -> S
                                static_cast<int32_t>(createTextureDescriptor.Extent.Height),
                                static_cast<int32_t>(createTextureDescriptor.Layers));
             break;
-        case ETextureType::Texture2DMultisample:
+        case TTextureType::Texture2DMultisample:
             glTextureStorage2DMultisample(texture.Id,
                                           SampleCountToGL(createTextureDescriptor.SampleCount),
                                           FormatToGL(createTextureDescriptor.Format),
@@ -858,7 +857,7 @@ auto CreateTexture(const SCreateTextureDescriptor& createTextureDescriptor) -> S
                                           static_cast<int32_t>(createTextureDescriptor.Extent.Height),
                                           GL_TRUE);
             break;
-        case ETextureType::Texture2DMultisampleArray:
+        case TTextureType::Texture2DMultisampleArray:
             glTextureStorage3DMultisample(texture.Id,
                                           SampleCountToGL(createTextureDescriptor.SampleCount),
                                           FormatToGL(createTextureDescriptor.Format),
@@ -871,26 +870,26 @@ auto CreateTexture(const SCreateTextureDescriptor& createTextureDescriptor) -> S
             std::unreachable();
     }
 
-    const auto textureId = STextureId(g_textures.size());
+    const auto textureId = TTextureId(g_textures.size());
     g_textures.emplace_back(texture);
 
     return textureId;
 }
 
-auto UploadTexture(const STextureId& textureId,
-                   const SUploadTextureDescriptor& updateTextureDescriptor) -> void {
+auto UploadTexture(const TTextureId& textureId,
+                   const TUploadTextureDescriptor& updateTextureDescriptor) -> void {
 
     auto& texture = GetTexture(textureId);
 
     uint32_t format = 0;
-    if (updateTextureDescriptor.UploadFormat == EUploadFormat::Auto) {
+    if (updateTextureDescriptor.UploadFormat == TUploadFormat::Auto) {
         format = UploadFormatToGL(FormatToUploadFormat(texture.Format));
     } else {
         format = UploadFormatToGL(updateTextureDescriptor.UploadFormat);
     }
 
     uint32_t type = 0;
-    if (updateTextureDescriptor.UploadType == EUploadType::Auto) {
+    if (updateTextureDescriptor.UploadType == TUploadType::Auto) {
         type = FormatToUnderlyingOpenGLType(texture.Format);
     } else {
         type = UploadTypeToGL(updateTextureDescriptor.UploadType);
@@ -933,7 +932,7 @@ auto UploadTexture(const STextureId& textureId,
     }
 }
 
-auto MakeTextureResident(const STextureId& textureId) -> uint64_t {
+auto MakeTextureResident(const TTextureId& textureId) -> uint64_t {
 
     auto& texture = GetTexture(textureId);
 
@@ -943,7 +942,7 @@ auto MakeTextureResident(const STextureId& textureId) -> uint64_t {
     return textureHandle;
 }
 
-auto GenerateMipmaps(const STextureId& textureId) -> void {
+auto GenerateMipmaps(const TTextureId& textureId) -> void {
 
     auto& texture = GetTexture(textureId);
     glGenerateTextureMipmap(texture.Id);

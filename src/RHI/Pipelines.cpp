@@ -15,79 +15,79 @@
 uint32_t g_defaultInputLayout = 0;
 uint32_t g_lastIndexBuffer = 0;
 
-std::vector<GraphicsPipeline> g_graphicsPipelines = {};
-std::vector<ComputePipeline> g_computePipelines = {};
+std::vector<TGraphicsPipeline> g_graphicsPipelines = {};
+std::vector<TComputePipeline> g_computePipelines = {};
 
-auto GetGraphicsPipeline(SGraphicsPipelineId graphicsPipelineId) -> GraphicsPipeline& {
-    assert(graphicsPipelineId != SGraphicsPipelineId::Invalid);
+auto GetGraphicsPipeline(TGraphicsPipelineId graphicsPipelineId) -> TGraphicsPipeline& {
+    assert(graphicsPipelineId != TGraphicsPipelineId::Invalid);
     return g_graphicsPipelines[static_cast<size_t>(graphicsPipelineId)];
 }
 
-auto GetComputePipeline(SComputePipelineId computePipelineId) -> ComputePipeline& {
-    assert(computePipelineId != SComputePipelineId::Invalid);
+auto GetComputePipeline(TComputePipelineId computePipelineId) -> TComputePipeline& {
+    assert(computePipelineId != TComputePipelineId::Invalid);
     return g_computePipelines[static_cast<size_t>(computePipelineId)];
 }
 
-Pipeline::~Pipeline() {
+TPipeline::~TPipeline() {
 }
 
-auto Pipeline::Bind() -> void {
+auto TPipeline::Bind() -> void {
     glUseProgram(Id);
 }
 
-auto Pipeline::BindBufferAsUniformBuffer(uint32_t buffer,
+auto TPipeline::BindBufferAsUniformBuffer(uint32_t buffer,
                                           int32_t bindingIndex) -> void {
     glBindBufferBase(GL_UNIFORM_BUFFER, bindingIndex, buffer);
 }
 
-auto Pipeline::BindBufferAsShaderStorageBuffer(uint32_t buffer,
+auto TPipeline::BindBufferAsShaderStorageBuffer(uint32_t buffer,
                                                 int32_t bindingIndex) -> void {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bindingIndex, buffer);
 }
 
-auto Pipeline::BindTexture(int32_t bindingIndex,
+auto TPipeline::BindTexture(int32_t bindingIndex,
                             uint32_t texture) -> void {
     glBindTextureUnit(bindingIndex, texture);
 }
 
-auto Pipeline::BindTextureAndSampler(int32_t bindingIndex,
+auto TPipeline::BindTextureAndSampler(int32_t bindingIndex,
                                       uint32_t texture,
                                       uint32_t sampler) -> void {
     glBindTextureUnit(bindingIndex, texture);
     glBindSampler(bindingIndex, sampler);
 }
 
-auto Pipeline::SetUniform(int32_t location,
+auto TPipeline::SetUniform(int32_t location,
                            float value) -> void {
     glProgramUniform1f(Id, location, value);
 }
 
-auto Pipeline::SetUniform(int32_t location,
+auto TPipeline::SetUniform(int32_t location,
                            int32_t value) -> void {
     glProgramUniform1i(Id, location, value);
 }
 
-auto Pipeline::SetUniform(int32_t location,
+auto TPipeline::SetUniform(int32_t location,
                            uint32_t value) -> void {
     glProgramUniform1ui(Id, location, value);
 }
 
-auto Pipeline::SetUniform(int32_t location,
+auto TPipeline::SetUniform(int32_t location,
                            uint64_t value) -> void {
     glProgramUniformHandleui64ARB(Id, location, value);
 }
 
-auto Pipeline::SetUniform(int32_t location,
+auto TPipeline::SetUniform(int32_t location,
                            const glm::vec2& value) -> void {
     glProgramUniform2fv(Id, location, 1, glm::value_ptr(value));
 }
 
-auto Pipeline::SetUniform(int32_t location,
+auto TPipeline::SetUniform(int32_t location,
                            const glm::vec3& value) -> void {
     glProgramUniform3fv(Id, location, 1, glm::value_ptr(value));
 }
 
-auto Pipeline::SetUniform(int32_t location,
+auto TPipeline::SetUniform(int32_t location,
                            float value1,
                            float value2,
                            float value3,
@@ -95,7 +95,7 @@ auto Pipeline::SetUniform(int32_t location,
     glProgramUniform4f(Id, location, value1, value2, value3, value4);
 }
 
-auto Pipeline::SetUniform(int32_t location,
+auto TPipeline::SetUniform(int32_t location,
                            int32_t value1,
                            int32_t value2,
                            int32_t value3,
@@ -103,27 +103,27 @@ auto Pipeline::SetUniform(int32_t location,
     glProgramUniform4i(Id, location, value1, value2, value3, value4);
 }
 
-auto Pipeline::SetUniform(int32_t location,
+auto TPipeline::SetUniform(int32_t location,
                            const glm::vec4& value) -> void {
     glProgramUniform4fv(Id, location, 1, glm::value_ptr(value));
 }
 
-auto Pipeline::SetUniform(int32_t location,
+auto TPipeline::SetUniform(int32_t location,
                            const glm::mat4& value) -> void {
     glProgramUniformMatrix4fv(Id, location, 1, GL_FALSE, glm::value_ptr(value));
 }
 
-auto GraphicsPipeline::Bind() -> void {
+auto TGraphicsPipeline::Bind() -> void {
 
     if (g_defaultInputLayout == 0) {
         glCreateVertexArrays(1, &g_defaultInputLayout);
     }
 
-    Pipeline::Bind();
+    TPipeline::Bind();
     glBindVertexArray(InputLayout.value_or(g_defaultInputLayout));
 }
 
-auto GraphicsPipeline::BindBufferAsVertexBuffer(uint32_t buffer,
+auto TGraphicsPipeline::BindBufferAsVertexBuffer(uint32_t buffer,
                                                  uint32_t bindingIndex,
                                                  long offset,
                                                  int32_t stride) -> void {
@@ -133,14 +133,14 @@ auto GraphicsPipeline::BindBufferAsVertexBuffer(uint32_t buffer,
     }
 }
 
-auto GraphicsPipeline::DrawArrays(int32_t vertexOffset,
-                                  int32_t vertexCount) -> void {
+auto TGraphicsPipeline::DrawArrays(int32_t vertexOffset,
+                                   int32_t vertexCount) -> void {
 
     glDrawArrays(PrimitiveTopology, vertexOffset, vertexCount);
 }
 
-auto GraphicsPipeline::DrawElements(uint32_t indexBuffer,
-                                    int32_t elementCount) -> void {
+auto TGraphicsPipeline::DrawElements(uint32_t indexBuffer,
+                                     int32_t elementCount) -> void {
 
     if (g_lastIndexBuffer != indexBuffer) {
         glVertexArrayElementBuffer(InputLayout.has_value() ? InputLayout.value() : g_defaultInputLayout, indexBuffer);
@@ -150,7 +150,7 @@ auto GraphicsPipeline::DrawElements(uint32_t indexBuffer,
     glDrawElements(PrimitiveTopology, elementCount, GL_UNSIGNED_INT, nullptr);
 }
 
-auto GraphicsPipeline::DrawElementsInstanced(uint32_t indexBuffer,
+auto TGraphicsPipeline::DrawElementsInstanced(uint32_t indexBuffer,
                                               int32_t elementCount,
                                               int32_t instanceCount) -> void {
     if (g_lastIndexBuffer != indexBuffer) {
@@ -161,12 +161,12 @@ auto GraphicsPipeline::DrawElementsInstanced(uint32_t indexBuffer,
     glDrawElementsInstanced(PrimitiveTopology, elementCount, GL_UNSIGNED_INT, nullptr, instanceCount);
 }
 
-auto DeleteGraphicsPipeline(const SGraphicsPipelineId& graphicsPipelineId) -> void {
+auto DeleteGraphicsPipeline(const TGraphicsPipelineId& graphicsPipelineId) -> void {
     auto& graphicsPipeline = GetGraphicsPipeline(graphicsPipelineId);
     glDeleteProgram(graphicsPipeline.Id);
 }
 
-auto DeleteComputePipeline(const SComputePipelineId& computePipelineId) -> void {
+auto DeleteComputePipeline(const TComputePipelineId& computePipelineId) -> void {
     auto& computePipeline = GetComputePipeline(computePipelineId);
     glDeleteProgram(computePipeline.Id);
 }
@@ -306,24 +306,24 @@ auto CreateComputeProgram(
     return program;
 }
 
-constexpr auto PrimitiveTopologyToGL(EPrimitiveTopology primitiveTopology) -> uint32_t {
+constexpr auto PrimitiveTopologyToGL(TPrimitiveTopology primitiveTopology) -> uint32_t {
     switch (primitiveTopology) {
-        case EPrimitiveTopology::Lines:
+        case TPrimitiveTopology::Lines:
             return GL_LINES;
-        case EPrimitiveTopology::TriangleFan:
+        case TPrimitiveTopology::TriangleFan:
             return GL_TRIANGLE_FAN;
-        case EPrimitiveTopology::Triangles:
+        case TPrimitiveTopology::Triangles:
             return GL_TRIANGLES;
-        case EPrimitiveTopology::TriangleStrip:
+        case TPrimitiveTopology::TriangleStrip:
             return GL_TRIANGLE_STRIP;
         default:
             std::unreachable();
     }
 }
 
-auto CreateGraphicsPipeline(const SGraphicsPipelineDescriptor& graphicsPipelineDescriptor) -> std::expected<SGraphicsPipelineId, std::string> {
+auto CreateGraphicsPipeline(const TGraphicsPipelineDescriptor& graphicsPipelineDescriptor) -> std::expected<TGraphicsPipelineId, std::string> {
 
-    const auto id = SGraphicsPipelineId(g_graphicsPipelines.size());
+    const auto id = TGraphicsPipelineId(g_graphicsPipelines.size());
     auto& pipeline = g_graphicsPipelines.emplace_back();
 
     auto graphicsProgramResult = CreateGraphicsProgram(graphicsPipelineDescriptor.Label,
@@ -354,15 +354,15 @@ auto CreateGraphicsPipeline(const SGraphicsPipelineDescriptor& graphicsPipelineD
                 auto isFormatNormalized = IsFormatNormalized(inputAttributeValue.Format);
                 auto formatClass = FormatToFormatClass(inputAttributeValue.Format);
                 switch (formatClass) {
-                    case EFormatClass::Float:
+                    case TFormatClass::Float:
                         glVertexArrayAttribFormat(inputLayout, inputAttributeValue.Location, componentCount, type,
                                                   isFormatNormalized, inputAttributeValue.Offset);
                         break;
-                    case EFormatClass::Integer:
+                    case TFormatClass::Integer:
                         glVertexArrayAttribIFormat(inputLayout, inputAttributeValue.Location, componentCount, type,
                                                    inputAttributeValue.Offset);
                         break;
-                    case EFormatClass::Long:
+                    case TFormatClass::Long:
                         glVertexArrayAttribLFormat(inputLayout, inputAttributeValue.Location, componentCount, type,
                                                    inputAttributeValue.Offset);
                         break;
@@ -390,9 +390,9 @@ auto CreateGraphicsPipeline(const SGraphicsPipelineDescriptor& graphicsPipelineD
     return id;
 }
 
-auto CreateComputePipeline(const SComputePipelineDescriptor& computePipelineDescriptor) -> std::expected<SComputePipelineId, std::string> {
+auto CreateComputePipeline(const TComputePipelineDescriptor& computePipelineDescriptor) -> std::expected<TComputePipelineId, std::string> {
 
-    const auto id = SComputePipelineId(g_graphicsPipelines.size());
+    const auto id = TComputePipelineId(g_graphicsPipelines.size());
     auto& pipeline = g_computePipelines.emplace_back();
 
     auto computeProgramResult = CreateComputeProgram(computePipelineDescriptor.Label,

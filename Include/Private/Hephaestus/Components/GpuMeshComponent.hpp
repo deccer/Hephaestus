@@ -2,6 +2,6 @@
 
 #include <string>
 
-struct SGpuMeshComponent {
+struct TGpuMeshComponent {
     std::string MeshName;
 };

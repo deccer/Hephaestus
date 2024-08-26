@@ -11,30 +11,30 @@
 
 #include <memory>
 
-class CDefaultRenderer : public CRenderer {
+class TDefaultRenderer : public TRenderer {
 public:
-    CDefaultRenderer(const SApplicationSettings& applicationSettings,
-                    const SApplicationContext& applicationContext) : CRenderer(applicationSettings, applicationContext) {}
-    ~CDefaultRenderer() override = default;
+    TDefaultRenderer(const TApplicationSettings& applicationSettings,
+                    const TApplicationContext& applicationContext) : TRenderer(applicationSettings, applicationContext) {}
+    ~TDefaultRenderer() override = default;
 
     auto Load() -> bool override;
     auto Unload() -> void override;
-    auto Render(SRenderContext& renderContext,
+    auto Render(TRenderContext& renderContext,
                 TScene& scene) -> void override;
-    auto RenderUserInterface(SRenderContext& renderContext,
+    auto RenderUserInterface(TRenderContext& renderContext,
                              TScene& scene) -> void override;
 private:
     auto DestroyFramebuffers() -> void;
     auto CreateFramebuffers(const glm::ivec2& scaledFramebufferSize) -> void;
-    auto ResizeIfNecessary(const SRenderContext& renderContext) -> void;
+    auto ResizeIfNecessary(const TRenderContext& renderContext) -> void;
 
     auto CreateGpuMesh(const std::string& meshName) -> void;
     auto CreateGpuMaterial(const std::string& materialName) -> void;
 
-    auto GetGpuMesh(const std::string& meshName) -> SGpuMesh&;
-    auto GetGpuMaterial(const std::string& materialName) -> SGpuMaterial&;
+    auto GetGpuMesh(const std::string& meshName) -> TGpuMesh&;
+    auto GetGpuMaterial(const std::string& materialName) -> TGpuMaterial&;
 
-    SFramebuffer _geometryPassFramebuffer;
-    SGraphicsPipelineId _geometryPassPipelineId = SGraphicsPipelineId::Invalid;
-    SGraphicsPipelineId _fullscreenPassPipelineId = SGraphicsPipelineId::Invalid;
+    TFramebuffer _geometryPassFramebuffer;
+    TGraphicsPipelineId _geometryPassPipelineId = TGraphicsPipelineId::Invalid;
+    TGraphicsPipelineId _fullscreenPassPipelineId = TGraphicsPipelineId::Invalid;
 };

@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-struct SGpuMesh {
+struct TGpuMesh {
     uint32_t VertexPositionBuffer;
     uint32_t VertexNormalUvTangentBuffer;
     uint32_t IndexBuffer;

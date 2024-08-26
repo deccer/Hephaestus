@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-struct SGpuMaterial {
+struct TGpuMaterial {
     glm::vec4 BaseColor;
     /*
      * .x = base color factor

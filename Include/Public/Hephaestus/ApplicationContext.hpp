@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <Hephaestus/VectorMath.hpp>
 
-struct SApplicationContext {
+struct TApplicationContext {
     bool IsEditor = false;
     bool SleepWhenWindowHasNoFocus = false;
     bool WindowHasFocus = false;

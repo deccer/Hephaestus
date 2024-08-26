@@ -13,103 +13,103 @@
 #include <imgui_impl_opengl3.h>
 #include <debugbreak.h>
 
-constexpr auto GlfwKeyToKey(int32_t glfwKey) -> EKey {
+constexpr auto GlfwKeyToKey(int32_t glfwKey) -> TKey {
     switch (glfwKey) {
-        case GLFW_KEY_ESCAPE: return EKey::KeyEscape;
-        case GLFW_KEY_F1: return EKey::KeyF1;
-        case GLFW_KEY_F2: return EKey::KeyF2;
-        case GLFW_KEY_F3: return EKey::KeyF3;
-        case GLFW_KEY_F4: return EKey::KeyF4;
-        case GLFW_KEY_F5: return EKey::KeyF5;
-        case GLFW_KEY_F6: return EKey::KeyF6;
-        case GLFW_KEY_F7: return EKey::KeyF7;
-        case GLFW_KEY_F8: return EKey::KeyF8;
-        case GLFW_KEY_F9: return EKey::KeyF9;
-        case GLFW_KEY_F10: return EKey::KeyF10;
-        case GLFW_KEY_F11: return EKey::KeyF11;
-        case GLFW_KEY_F12: return EKey::KeyF12;
-        case GLFW_KEY_PRINT_SCREEN: return EKey::KeyPrint;
-        case GLFW_KEY_SCROLL_LOCK: return EKey::KeyScrollLock;
-        case GLFW_KEY_PAUSE: return EKey::KeyPause;
+        case GLFW_KEY_ESCAPE: return TKey::KeyEscape;
+        case GLFW_KEY_F1: return TKey::KeyF1;
+        case GLFW_KEY_F2: return TKey::KeyF2;
+        case GLFW_KEY_F3: return TKey::KeyF3;
+        case GLFW_KEY_F4: return TKey::KeyF4;
+        case GLFW_KEY_F5: return TKey::KeyF5;
+        case GLFW_KEY_F6: return TKey::KeyF6;
+        case GLFW_KEY_F7: return TKey::KeyF7;
+        case GLFW_KEY_F8: return TKey::KeyF8;
+        case GLFW_KEY_F9: return TKey::KeyF9;
+        case GLFW_KEY_F10: return TKey::KeyF10;
+        case GLFW_KEY_F11: return TKey::KeyF11;
+        case GLFW_KEY_F12: return TKey::KeyF12;
+        case GLFW_KEY_PRINT_SCREEN: return TKey::KeyPrint;
+        case GLFW_KEY_SCROLL_LOCK: return TKey::KeyScrollLock;
+        case GLFW_KEY_PAUSE: return TKey::KeyPause;
 
-        case GLFW_KEY_GRAVE_ACCENT: return EKey::KeyGraveAccent;
-        case GLFW_KEY_1: return EKey::Key1;
-        case GLFW_KEY_2: return EKey::Key2;
-        case GLFW_KEY_3: return EKey::Key3;
-        case GLFW_KEY_4: return EKey::Key4;
-        case GLFW_KEY_5: return EKey::Key5;
-        case GLFW_KEY_6: return EKey::Key6;
-        case GLFW_KEY_7: return EKey::Key7;
-        case GLFW_KEY_8: return EKey::Key8;
-        case GLFW_KEY_9: return EKey::Key9;
-        case GLFW_KEY_0: return EKey::Key0;
-        case GLFW_KEY_MINUS: return EKey::KeyMinus;
-        case GLFW_KEY_EQUAL: return EKey::KeyEqual;
-        case GLFW_KEY_BACKSPACE: return EKey::KeyBackspace;
+        case GLFW_KEY_GRAVE_ACCENT: return TKey::KeyGraveAccent;
+        case GLFW_KEY_1: return TKey::Key1;
+        case GLFW_KEY_2: return TKey::Key2;
+        case GLFW_KEY_3: return TKey::Key3;
+        case GLFW_KEY_4: return TKey::Key4;
+        case GLFW_KEY_5: return TKey::Key5;
+        case GLFW_KEY_6: return TKey::Key6;
+        case GLFW_KEY_7: return TKey::Key7;
+        case GLFW_KEY_8: return TKey::Key8;
+        case GLFW_KEY_9: return TKey::Key9;
+        case GLFW_KEY_0: return TKey::Key0;
+        case GLFW_KEY_MINUS: return TKey::KeyMinus;
+        case GLFW_KEY_EQUAL: return TKey::KeyEqual;
+        case GLFW_KEY_BACKSPACE: return TKey::KeyBackspace;
 
-        case GLFW_KEY_TAB: return EKey::KeyTab;
-        case GLFW_KEY_Q: return EKey::KeyQ;
-        case GLFW_KEY_W: return EKey::KeyW;
-        case GLFW_KEY_E: return EKey::KeyE;
-        case GLFW_KEY_R: return EKey::KeyR;
-        case GLFW_KEY_T: return EKey::KeyT;
-        case GLFW_KEY_Y: return EKey::KeyY;
-        case GLFW_KEY_U: return EKey::KeyU;
-        case GLFW_KEY_I: return EKey::KeyI;
-        case GLFW_KEY_O: return EKey::KeyO;
-        case GLFW_KEY_P: return EKey::KeyP;
-        case GLFW_KEY_LEFT_BRACKET: return EKey::KeyLeftBracket;
-        case GLFW_KEY_RIGHT_BRACKET: return EKey::KeyRightBracket;
+        case GLFW_KEY_TAB: return TKey::KeyTab;
+        case GLFW_KEY_Q: return TKey::KeyQ;
+        case GLFW_KEY_W: return TKey::KeyW;
+        case GLFW_KEY_E: return TKey::KeyE;
+        case GLFW_KEY_R: return TKey::KeyR;
+        case GLFW_KEY_T: return TKey::KeyT;
+        case GLFW_KEY_Y: return TKey::KeyY;
+        case GLFW_KEY_U: return TKey::KeyU;
+        case GLFW_KEY_I: return TKey::KeyI;
+        case GLFW_KEY_O: return TKey::KeyO;
+        case GLFW_KEY_P: return TKey::KeyP;
+        case GLFW_KEY_LEFT_BRACKET: return TKey::KeyLeftBracket;
+        case GLFW_KEY_RIGHT_BRACKET: return TKey::KeyRightBracket;
 
-        case GLFW_KEY_CAPS_LOCK: return EKey::KeyCapsLock;
-        case GLFW_KEY_A: return EKey::KeyA;
-        case GLFW_KEY_S: return EKey::KeyS;
-        case GLFW_KEY_D: return EKey::KeyD;
-        case GLFW_KEY_F: return EKey::KeyF;
-        case GLFW_KEY_G: return EKey::KeyG;
-        case GLFW_KEY_H: return EKey::KeyH;
-        case GLFW_KEY_J: return EKey::KeyJ;
-        case GLFW_KEY_K: return EKey::KeyK;
-        case GLFW_KEY_L: return EKey::KeyL;
-        case GLFW_KEY_SEMICOLON: return EKey::KeySemicolon;
-        case GLFW_KEY_APOSTROPHE: return EKey::KeyApostrophe;
-        case GLFW_KEY_ENTER: return EKey::KeyEnter;
+        case GLFW_KEY_CAPS_LOCK: return TKey::KeyCapsLock;
+        case GLFW_KEY_A: return TKey::KeyA;
+        case GLFW_KEY_S: return TKey::KeyS;
+        case GLFW_KEY_D: return TKey::KeyD;
+        case GLFW_KEY_F: return TKey::KeyF;
+        case GLFW_KEY_G: return TKey::KeyG;
+        case GLFW_KEY_H: return TKey::KeyH;
+        case GLFW_KEY_J: return TKey::KeyJ;
+        case GLFW_KEY_K: return TKey::KeyK;
+        case GLFW_KEY_L: return TKey::KeyL;
+        case GLFW_KEY_SEMICOLON: return TKey::KeySemicolon;
+        case GLFW_KEY_APOSTROPHE: return TKey::KeyApostrophe;
+        case GLFW_KEY_ENTER: return TKey::KeyEnter;
 
-        case GLFW_KEY_LEFT_SHIFT: return EKey::KeyLeftShift;
-        case GLFW_KEY_Z: return EKey::KeyL;
-        case GLFW_KEY_X: return EKey::KeyL;
-        case GLFW_KEY_C: return EKey::KeyL;
-        case GLFW_KEY_V: return EKey::KeyL;
-        case GLFW_KEY_B: return EKey::KeyL;
-        case GLFW_KEY_N: return EKey::KeyL;
-        case GLFW_KEY_M: return EKey::KeyL;
-        case GLFW_KEY_COMMA: return EKey::KeyComma;
-        case GLFW_KEY_PERIOD: return EKey::KeyPeriod;
-        case GLFW_KEY_SLASH: return EKey::KeySlash;
-        case GLFW_KEY_RIGHT_SHIFT: return EKey::KeyRightShift;
+        case GLFW_KEY_LEFT_SHIFT: return TKey::KeyLeftShift;
+        case GLFW_KEY_Z: return TKey::KeyL;
+        case GLFW_KEY_X: return TKey::KeyL;
+        case GLFW_KEY_C: return TKey::KeyL;
+        case GLFW_KEY_V: return TKey::KeyL;
+        case GLFW_KEY_B: return TKey::KeyL;
+        case GLFW_KEY_N: return TKey::KeyL;
+        case GLFW_KEY_M: return TKey::KeyL;
+        case GLFW_KEY_COMMA: return TKey::KeyComma;
+        case GLFW_KEY_PERIOD: return TKey::KeyPeriod;
+        case GLFW_KEY_SLASH: return TKey::KeySlash;
+        case GLFW_KEY_RIGHT_SHIFT: return TKey::KeyRightShift;
 
-        case GLFW_KEY_LEFT_CONTROL: return EKey::KeyLeftControl;
-        case GLFW_KEY_LEFT_SUPER: return EKey::KeyLeftMeta;
-        case GLFW_KEY_LEFT_ALT: return EKey::KeyLeftAlt;
-        case GLFW_KEY_SPACE: return EKey::KeySpace;
-        case GLFW_KEY_RIGHT_ALT: return EKey::KeyRightAlt;
-        case GLFW_KEY_RIGHT_SUPER: return EKey::KeyRightMeta;
-        case GLFW_KEY_RIGHT_CONTROL: return EKey::KeyRightControl;
+        case GLFW_KEY_LEFT_CONTROL: return TKey::KeyLeftControl;
+        case GLFW_KEY_LEFT_SUPER: return TKey::KeyLeftMeta;
+        case GLFW_KEY_LEFT_ALT: return TKey::KeyLeftAlt;
+        case GLFW_KEY_SPACE: return TKey::KeySpace;
+        case GLFW_KEY_RIGHT_ALT: return TKey::KeyRightAlt;
+        case GLFW_KEY_RIGHT_SUPER: return TKey::KeyRightMeta;
+        case GLFW_KEY_RIGHT_CONTROL: return TKey::KeyRightControl;
 
-        default: return EKey::KeyNone;
+        default: return TKey::KeyNone;
     }
 }
 
-constexpr auto GlfwMouseButtonToMouseButton(int32_t button) -> EMouseButton {
+constexpr auto GlfwMouseButtonToMouseButton(int32_t button) -> TMouseButton {
     switch (button) {
-        case GLFW_MOUSE_BUTTON_1: return EMouseButton::Left;
-        case GLFW_MOUSE_BUTTON_2: return EMouseButton::Right;
-        case GLFW_MOUSE_BUTTON_3: return EMouseButton::Middle;
-        default: return EMouseButton::None;
+        case GLFW_MOUSE_BUTTON_1: return TMouseButton::Left;
+        case GLFW_MOUSE_BUTTON_2: return TMouseButton::Right;
+        case GLFW_MOUSE_BUTTON_3: return TMouseButton::Middle;
+        default: return TMouseButton::None;
     }
 }
 
-class ApplicationAccess {
+class TApplicationAccess {
 public:
     static auto OnWindowKey(
         [[maybe_unused]] GLFWwindow* window,
@@ -119,7 +119,7 @@ public:
         [[maybe_unused]] int32_t mods) -> void {
 
         if (action == GLFW_PRESS || action == GLFW_RELEASE) {
-            Keyboard::SetKey(GlfwKeyToKey(key), action != GLFW_RELEASE);
+            TKeyboard::SetKey(GlfwKeyToKey(key), action != GLFW_RELEASE);
         }
         /*
         if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -139,14 +139,14 @@ public:
         int32_t action,
         [[maybe_unused]] int32_t modifier) -> void {
 
-        Mouse::SetButton(GlfwMouseButtonToMouseButton(button), action == GLFW_PRESS || action == GLFW_REPEAT);
+        TMouse::SetButton(GlfwMouseButtonToMouseButton(button), action == GLFW_PRESS || action == GLFW_REPEAT);
     }
 
     static auto OnWindowCursorEntered(
         [[maybe_unused]] GLFWwindow* window,
         int32_t entered) -> void {
 
-        auto application = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        auto application = static_cast<TApplication*>(glfwGetWindowUserPointer(window));
         if (entered) {
             application->OnWindowFocusGained();
         } else {
@@ -164,13 +164,13 @@ public:
 
         if (_cursorJustEntered)
         {
-            Mouse::SetDeltaCursorPosition(
+            TMouse::SetDeltaCursorPosition(
                 static_cast<float>(cursorPositionX),
                 static_cast<float>(cursorPositionY));
             _cursorJustEntered = false;
         }
 
-        Mouse::SetDeltaCursorPosition(
+        TMouse::SetDeltaCursorPosition(
             static_cast<float>(cursorPositionX - lastCursorPositionX),
             static_cast<float>(lastCursorPositionY - cursorPositionY));
 
@@ -183,14 +183,14 @@ public:
         const int32_t width,
         const int32_t height) -> void {
 
-        auto application = static_cast<Application*>(glfwGetWindowUserPointer(window));
+        auto application = static_cast<TApplication*>(glfwGetWindowUserPointer(window));
         application->OnWindowFramebufferSizeChanged(width, height);
     }
 private:
     static bool _cursorJustEntered;
 };
 
-bool ApplicationAccess::_cursorJustEntered = true;
+bool TApplicationAccess::_cursorJustEntered = true;
 
 static auto OnOpenGLDebugMessage(
     [[maybe_unused]] uint32_t source,
@@ -207,7 +207,7 @@ static auto OnOpenGLDebugMessage(
     }
 }
 
-Application::Application(const SApplicationCreateInfo& applicationCreateInfo)
+TApplication::TApplication(const TApplicationCreateInfo& applicationCreateInfo)
     : _applicationSettings(applicationCreateInfo.Settings), _applicationContext({}), _window(nullptr), _guiContext(nullptr) {
 
     _applicationContext.WindowFramebufferSize = {_applicationSettings.ResolutionWidth, _applicationSettings.ResolutionHeight};
@@ -222,13 +222,13 @@ Application::Application(const SApplicationCreateInfo& applicationCreateInfo)
     }
 
     if (applicationCreateInfo.Renderer == nullptr) {
-        _renderer = std::make_unique<CDefaultRenderer>(_applicationSettings, _applicationContext);
+        _renderer = std::make_unique<TDefaultRenderer>(_applicationSettings, _applicationContext);
     } else {
         _renderer.reset(applicationCreateInfo.Renderer);
     }
 }
 
-auto Application::Run() -> void {
+auto TApplication::Run() -> void {
 
     if (!Initialize()) {
         return;
@@ -238,7 +238,7 @@ auto Application::Run() -> void {
         return;
     }
 
-    SRenderContext renderContext = {
+    TRenderContext renderContext = {
         .IsSrgbDisabled = true,
         .FrameCounter = 0,
     };
@@ -292,13 +292,13 @@ auto Application::Run() -> void {
     Unload();
 }
 
-auto Application::Initialize() -> bool {
+auto TApplication::Initialize() -> bool {
 
     if (glfwInit() == GLFW_FALSE) {
         return false;
     }
 
-    const auto isWindowWindowed = _applicationSettings.WindowStyle == EWindowStyle::Windowed;
+    const auto isWindowWindowed = _applicationSettings.WindowStyle == TWindowStyle::Windowed;
     glfwWindowHint(GLFW_DECORATED, isWindowWindowed ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_RESIZABLE, isWindowWindowed ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
@@ -320,14 +320,14 @@ auto Application::Initialize() -> bool {
     const auto screenWidth = primaryMonitorVideoMode->width;
     const auto screenHeight = primaryMonitorVideoMode->height;
 
-    const auto windowWidth = _applicationSettings.ResolutionStartup == EResolutionStartup::NinetyPercentOfScreenSize
+    const auto windowWidth = _applicationSettings.ResolutionStartup == TResolutionStartup::NinetyPercentOfScreenSize
                              ? static_cast<int>(static_cast<float>(screenWidth) * 0.9f)
                              : _applicationSettings.ResolutionWidth;
-    const auto windowHeight = _applicationSettings.ResolutionStartup == EResolutionStartup::NinetyPercentOfScreenSize
+    const auto windowHeight = _applicationSettings.ResolutionStartup == TResolutionStartup::NinetyPercentOfScreenSize
                               ? static_cast<int>(static_cast<float>(screenHeight) * 0.9f)
                               : _applicationSettings.ResolutionHeight;
 
-    auto monitor = _applicationSettings.WindowStyle == EWindowStyle::FullscreenExclusive
+    auto monitor = _applicationSettings.WindowStyle == TWindowStyle::FullscreenExclusive
                    ? primaryMonitor
                    : nullptr;
 
@@ -350,11 +350,11 @@ auto Application::Initialize() -> bool {
         glfwSetWindowPos(_window, monitorLeft, monitorTop);
     }
 
-    glfwSetKeyCallback(_window, ApplicationAccess::OnWindowKey);
-    glfwSetMouseButtonCallback(_window, ApplicationAccess::OnWindowMouseButton);
-    glfwSetCursorPosCallback(_window, ApplicationAccess::OnWindowCursorPosition);
-    glfwSetCursorEnterCallback(_window, ApplicationAccess::OnWindowCursorEntered);
-    glfwSetFramebufferSizeCallback(_window, ApplicationAccess::OnWindowFramebufferSizeChanged);
+    glfwSetKeyCallback(_window, TApplicationAccess::OnWindowKey);
+    glfwSetMouseButtonCallback(_window, TApplicationAccess::OnWindowMouseButton);
+    glfwSetCursorPosCallback(_window, TApplicationAccess::OnWindowCursorPosition);
+    glfwSetCursorEnterCallback(_window, TApplicationAccess::OnWindowCursorEntered);
+    glfwSetFramebufferSizeCallback(_window, TApplicationAccess::OnWindowFramebufferSizeChanged);
 
     int32_t windowFramebufferWidth = 0;
     int32_t windowFramebufferHeight = 0;
@@ -415,7 +415,7 @@ auto Application::Initialize() -> bool {
     return true;
 }
 
-auto Application::Load() -> bool {
+auto TApplication::Load() -> bool {
 
     if (!_renderer->Load()) {
         return false;
@@ -428,7 +428,7 @@ auto Application::Load() -> bool {
     return true;
 }
 
-auto Application::Unload() -> void {
+auto TApplication::Unload() -> void {
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -440,15 +440,15 @@ auto Application::Unload() -> void {
     glfwTerminate();
 }
 
-auto Application::OnWindowFocusGained() -> void {
+auto TApplication::OnWindowFocusGained() -> void {
 
 }
 
-auto Application::OnWindowFocusLost() -> void {
+auto TApplication::OnWindowFocusLost() -> void {
 
 }
 
-auto Application::OnWindowFramebufferSizeChanged(
+auto TApplication::OnWindowFramebufferSizeChanged(
     int32_t framebufferWidth,
     int32_t framebufferHeight) -> void {
 

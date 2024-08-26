@@ -7,7 +7,7 @@
 #include <format>
 #include <utility>
 
-enum class EAttachmentType : uint32_t {
+enum class TAttachmentType : uint32_t {
     ColorAttachment0 = 0u,
     ColorAttachment1,
     ColorAttachment2,
@@ -20,55 +20,56 @@ enum class EAttachmentType : uint32_t {
     StencilAttachment
 };
 
-constexpr auto FormatToAttachmentType(EFormat attachmentFormat, size_t colorAttachmentIndex) -> EAttachmentType {
+constexpr auto FormatToAttachmentType(TFormat attachmentFormat,
+                                      size_t colorAttachmentIndex) -> TAttachmentType {
 
     switch (attachmentFormat) {
-        case EFormat::D24_UNORM:
-        case EFormat::D24_UNORM_S8_UINT:
-        case EFormat::D32_FLOAT:
-        case EFormat::D32_FLOAT_S8_UINT:
-        case EFormat::D32_UNORM:
-            return EAttachmentType::DepthAttachment;
+        case TFormat::D24_UNORM:
+        case TFormat::D24_UNORM_S8_UINT:
+        case TFormat::D32_FLOAT:
+        case TFormat::D32_FLOAT_S8_UINT:
+        case TFormat::D32_UNORM:
+            return TAttachmentType::DepthAttachment;
         default:
-            return static_cast<EAttachmentType>(
-                static_cast<std::underlying_type<EAttachmentType>::type>(EAttachmentType::ColorAttachment0) +
+            return static_cast<TAttachmentType>(
+                static_cast<std::underlying_type<TAttachmentType>::type>(TAttachmentType::ColorAttachment0) +
                 colorAttachmentIndex);
     }
 }
 
-auto AttachmentTypeToGL(EAttachmentType attachmentType) -> uint32_t {
+auto AttachmentTypeToGL(TAttachmentType attachmentType) -> uint32_t {
     switch (attachmentType) {
-        case EAttachmentType::ColorAttachment0:
+        case TAttachmentType::ColorAttachment0:
             return GL_COLOR_ATTACHMENT0;
-        case EAttachmentType::ColorAttachment1:
+        case TAttachmentType::ColorAttachment1:
             return GL_COLOR_ATTACHMENT1;
-        case EAttachmentType::ColorAttachment2:
+        case TAttachmentType::ColorAttachment2:
             return GL_COLOR_ATTACHMENT2;
-        case EAttachmentType::ColorAttachment3:
+        case TAttachmentType::ColorAttachment3:
             return GL_COLOR_ATTACHMENT3;
-        case EAttachmentType::ColorAttachment4:
+        case TAttachmentType::ColorAttachment4:
             return GL_COLOR_ATTACHMENT4;
-        case EAttachmentType::ColorAttachment5:
+        case TAttachmentType::ColorAttachment5:
             return GL_COLOR_ATTACHMENT5;
-        case EAttachmentType::ColorAttachment6:
+        case TAttachmentType::ColorAttachment6:
             return GL_COLOR_ATTACHMENT6;
-        case EAttachmentType::ColorAttachment7:
+        case TAttachmentType::ColorAttachment7:
             return GL_COLOR_ATTACHMENT7;
-        case EAttachmentType::DepthAttachment:
+        case TAttachmentType::DepthAttachment:
             return GL_DEPTH_ATTACHMENT;
-        case EAttachmentType::StencilAttachment:
+        case TAttachmentType::StencilAttachment:
             return GL_STENCIL_ATTACHMENT;
         default:
             std::string message = "AttachmentType not mappable";
             glDebugMessageInsert(GL_DEBUG_SOURCE_APPLICATION, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH,
-                                 message.size(), message.data());
+                                 static_cast<int32_t>(message.size()), message.data());
             return -1;
     }
 }
 
-auto CreateFramebuffer(const SFramebufferDescriptor& framebufferDescriptor) -> SFramebuffer {
+auto CreateFramebuffer(const TFramebufferDescriptor& framebufferDescriptor) -> TFramebuffer {
 
-    SFramebuffer framebuffer = {};
+    TFramebuffer framebuffer = {};
     glCreateFramebuffers(1, &framebuffer.Id);
     if (!framebufferDescriptor.Label.empty()) {
         SetDebugLabel(framebuffer.Id, GL_FRAMEBUFFER, framebufferDescriptor.Label);
@@ -80,14 +81,14 @@ auto CreateFramebuffer(const SFramebufferDescriptor& framebufferDescriptor) -> S
         if (colorAttachmentDescriptorValue.has_value()) {
             auto& colorAttachmentDescriptor = *colorAttachmentDescriptorValue;
             auto colorAttachmentTextureId = CreateTexture({
-                                                              .TextureType = ETextureType::Texture2D,
+                                                              .TextureType = TTextureType::Texture2D,
                                                               .Format = colorAttachmentDescriptor.Format,
-                                                              .Extent = SExtent3D(
+                                                              .Extent = TExtent3D(
                                                                   colorAttachmentDescriptor.Extent.Width,
                                                                   colorAttachmentDescriptor.Extent.Height, 1),
                                                               .MipMapLevels = 1,
                                                               .Layers = 0,
-                                                              .SampleCount = ESampleCount::One,
+                                                              .SampleCount = TSampleCount::One,
                                                               .Label = std::format("{}_{}x{}",
                                                                                    colorAttachmentDescriptor.Label,
                                                                                    colorAttachmentDescriptor.Extent.Width,
@@ -119,13 +120,13 @@ auto CreateFramebuffer(const SFramebufferDescriptor& framebufferDescriptor) -> S
     if (framebufferDescriptor.DepthStencilAttachment.has_value()) {
         auto& depthStencilAttachment = *framebufferDescriptor.DepthStencilAttachment;
         auto depthTextureId = CreateTexture({
-                                                .TextureType = ETextureType::Texture2D,
+                                                .TextureType = TTextureType::Texture2D,
                                                 .Format = depthStencilAttachment.Format,
-                                                .Extent = SExtent3D(depthStencilAttachment.Extent.Width,
+                                                .Extent = TExtent3D(depthStencilAttachment.Extent.Width,
                                                                     depthStencilAttachment.Extent.Height, 1),
                                                 .MipMapLevels = 1,
                                                 .Layers = 0,
-                                                .SampleCount = ESampleCount::One,
+                                                .SampleCount = TSampleCount::One,
                                                 .Label = std::format("{}_{}x{}", depthStencilAttachment.Label,
                                                                      depthStencilAttachment.Extent.Width,
                                                                      depthStencilAttachment.Extent.Height)
@@ -154,29 +155,33 @@ auto CreateFramebuffer(const SFramebufferDescriptor& framebufferDescriptor) -> S
     return framebuffer;
 }
 
-auto BindFramebuffer(const SFramebuffer& framebuffer) -> void {
+auto BindFramebuffer(const TFramebuffer& framebuffer) -> void {
 
     glBindFramebuffer(GL_FRAMEBUFFER, framebuffer.Id);
 
     for (auto colorAttachmentIndex = 0; auto colorAttachmentValue: framebuffer.ColorAttachments) {
         if (colorAttachmentValue.has_value()) {
             auto& colorAttachment = *colorAttachmentValue;
-            if (colorAttachment.LoadOperation == EFramebufferAttachmentLoadOperation::Clear) {
+            if (colorAttachment.LoadOperation == TFramebufferAttachmentLoadOperation::Clear) {
                 auto baseTypeClass = FormatToBaseTypeClass(colorAttachment.Texture.Format);
                 switch (baseTypeClass) {
-                    case EBaseTypeClass::Float:
-                        glClearNamedFramebufferfv(framebuffer.Id, GL_COLOR, colorAttachmentIndex, std::get_if<std::array<float, 4>>(
-                            &colorAttachment.ClearColor.Color)->data());
+                    case TBaseTypeClass::Float:
+                        glClearNamedFramebufferfv(framebuffer.Id,
+                                                  GL_COLOR,
+                                                  colorAttachmentIndex,
+                                                  std::get_if<std::array<float, 4>>(&colorAttachment.ClearColor.Color)->data());
                         break;
-                    case EBaseTypeClass::Integer:
-                        glClearNamedFramebufferiv(framebuffer.Id, GL_COLOR, colorAttachmentIndex,
-                                                  std::get_if<std::array<int32_t, 4>>(
-                                                      &colorAttachment.ClearColor.Color)->data());
+                    case TBaseTypeClass::Integer:
+                        glClearNamedFramebufferiv(framebuffer.Id,
+                                                  GL_COLOR,
+                                                  colorAttachmentIndex,
+                                                  std::get_if<std::array<int32_t, 4>>(&colorAttachment.ClearColor.Color)->data());
                         break;
-                    case EBaseTypeClass::UnsignedInteger:
-                        glClearNamedFramebufferuiv(framebuffer.Id, GL_COLOR, colorAttachmentIndex,
-                                                   std::get_if<std::array<uint32_t, 4>>(
-                                                       &colorAttachment.ClearColor.Color)->data());
+                    case TBaseTypeClass::UnsignedInteger:
+                        glClearNamedFramebufferuiv(framebuffer.Id,
+                                                   GL_COLOR,
+                                                   colorAttachmentIndex,
+                                                   std::get_if<std::array<uint32_t, 4>>(&colorAttachment.ClearColor.Color)->data());
                         break;
                     default:
                         std::unreachable;
@@ -188,7 +193,7 @@ auto BindFramebuffer(const SFramebuffer& framebuffer) -> void {
 
     if (framebuffer.DepthStencilAttachment.has_value()) {
         auto& depthStencilAttachment = *framebuffer.DepthStencilAttachment;
-        if (depthStencilAttachment.LoadOperation == EFramebufferAttachmentLoadOperation::Clear) {
+        if (depthStencilAttachment.LoadOperation == TFramebufferAttachmentLoadOperation::Clear) {
             glClearNamedFramebufferfi(framebuffer.Id, GL_DEPTH_STENCIL, 0,
                                       depthStencilAttachment.ClearDepthStencil.Depth,
                                       depthStencilAttachment.ClearDepthStencil.Stencil);
@@ -196,7 +201,7 @@ auto BindFramebuffer(const SFramebuffer& framebuffer) -> void {
     }
 }
 
-auto DeleteFramebuffer(const SFramebuffer& framebuffer) -> void {
+auto DeleteFramebuffer(const TFramebuffer& framebuffer) -> void {
 
     assert(framebuffer.Id != 0);
 

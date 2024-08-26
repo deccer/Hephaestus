@@ -2,6 +2,6 @@
 
 #include <Hephaestus/VectorMath.hpp>
 
-struct STransformComponent {
+struct TTransformComponent {
     glm::mat4 Transform;
 };

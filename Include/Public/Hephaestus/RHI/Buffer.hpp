@@ -3,13 +3,13 @@
 #include <cstdint>
 #include <string_view>
 
-enum class EBufferType {
+enum class TBufferType {
     UniformBuffer,
     ShaderStorageBuffer
 };
 
 auto BindBufferAs(uint32_t buffer,
-                  EBufferType bufferType,
+                  TBufferType bufferType,
                   int32_t bindingIndex) -> void;
 
 auto CreateBuffer(std::string_view label,

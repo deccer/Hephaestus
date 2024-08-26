@@ -22,13 +22,13 @@
 
 #include <parallel_hashmap/phmap.h>
 
-phmap::flat_hash_map<std::string, SGpuMeshComponent> g_gpuMeshComponents = {};
-phmap::flat_hash_map<std::string, SGpuMaterialComponent> g_gpuMaterialComponents = {};
+phmap::flat_hash_map<std::string, TGpuMeshComponent> g_gpuMeshComponents = {};
+phmap::flat_hash_map<std::string, TGpuMaterialComponent> g_gpuMaterialComponents = {};
 
-phmap::flat_hash_map<std::string, SGpuMesh> g_gpuMeshes = {};
-phmap::flat_hash_map<std::string, SGpuMaterial> g_gpuMaterials = {};
+phmap::flat_hash_map<std::string, TGpuMesh> g_gpuMeshes = {};
+phmap::flat_hash_map<std::string, TGpuMaterial> g_gpuMaterials = {};
 
-auto CDefaultRenderer::Load() -> bool {
+auto TDefaultRenderer::Load() -> bool {
 
     ApplicationContext.WindowFramebufferScaledSize = glm::ivec2{
         ApplicationContext.WindowFramebufferSize.x * ApplicationSettings.ResolutionScale,
@@ -51,7 +51,7 @@ auto CDefaultRenderer::Load() -> bool {
         .VertexShaderFilePath = "data/Shaders/Default/Scene.vs.glsl",
         .FragmentShaderFilePath = "data/Shaders/Default/Scene.fs.glsl",
         .InputAssembly = {
-            .PrimitiveTopology = EPrimitiveTopology::Triangles
+            .PrimitiveTopology = TPrimitiveTopology::Triangles
         },
     });
 
@@ -67,7 +67,7 @@ auto CDefaultRenderer::Load() -> bool {
         .VertexShaderFilePath = "data/Shaders/FST.vs.glsl",
         .FragmentShaderFilePath = "data/Shaders/FST.fs.glsl",
         .InputAssembly = {
-                .PrimitiveTopology = EPrimitiveTopology::Triangles
+                .PrimitiveTopology = TPrimitiveTopology::Triangles
         }
     });
 
@@ -76,14 +76,14 @@ auto CDefaultRenderer::Load() -> bool {
     return true;
 }
 
-auto CDefaultRenderer::Unload() -> void {
+auto TDefaultRenderer::Unload() -> void {
 
     DestroyFramebuffers();
     DeleteGraphicsPipeline(_geometryPassPipelineId);
     DeleteGraphicsPipeline(_fullscreenPassPipelineId);
 }
 
-auto CDefaultRenderer::Render(SRenderContext& renderContext,
+auto TDefaultRenderer::Render(TRenderContext& renderContext,
                               TScene& scene) -> void {
 
     ResizeIfNecessary(renderContext);
@@ -94,19 +94,19 @@ auto CDefaultRenderer::Render(SRenderContext& renderContext,
     // Create Gpu Resources if necessary
     ///////////////////////
 
-    auto createGpuResourcesNecessaryView = registry.view<STagCreateGpuResourcesComponent>();
+    auto createGpuResourcesNecessaryView = registry.view<TTagCreateGpuResourcesComponent>();
     for (auto& entity : createGpuResourcesNecessaryView) {
 
-        auto& meshComponent = registry.get<SMeshComponent>(entity);
-        auto& materialComponent = registry.get<SMaterialComponent>(entity);
+        auto& meshComponent = registry.get<TMeshComponent>(entity);
+        auto& materialComponent = registry.get<TMaterialComponent>(entity);
 
         CreateGpuMesh(meshComponent.MeshName);
         CreateGpuMaterial(materialComponent.MaterialName);
 
-        registry.emplace<SGpuMeshComponent>(entity, meshComponent.MeshName);
-        registry.emplace<SGpuMaterialComponent>(entity, materialComponent.MaterialName);
+        registry.emplace<TGpuMeshComponent>(entity, meshComponent.MeshName);
+        registry.emplace<TGpuMaterialComponent>(entity, materialComponent.MaterialName);
 
-        registry.remove<STagCreateGpuResourcesComponent>(entity);
+        registry.remove<TTagCreateGpuResourcesComponent>(entity);
     }
 
     BindFramebuffer(_geometryPassFramebuffer);
@@ -117,12 +117,12 @@ auto CDefaultRenderer::Render(SRenderContext& renderContext,
 
     geometryGraphicsPipeline.Bind();
 
-    auto gpuResourcesView = registry.view<SGpuMeshComponent>();
+    auto gpuResourcesView = registry.view<TGpuMeshComponent>();
     for (auto& entity : gpuResourcesView) {
 
-        auto& gpuMeshComponent = registry.get<SGpuMeshComponent>(entity);
-        auto& gpuMaterialComponent = registry.get<SGpuMaterialComponent>(entity);
-        auto& transformComponent = registry.get<STransformComponent>(entity);
+        auto& gpuMeshComponent = registry.get<TGpuMeshComponent>(entity);
+        auto& gpuMaterialComponent = registry.get<TGpuMaterialComponent>(entity);
+        auto& transformComponent = registry.get<TTransformComponent>(entity);
 
         auto& gpuMesh = GetGpuMesh(gpuMeshComponent.MeshName);
         auto& gpuMaterial = GetGpuMaterial(gpuMaterialComponent.MaterialName);
@@ -131,7 +131,7 @@ auto CDefaultRenderer::Render(SRenderContext& renderContext,
     geometryGraphicsPipeline.SetUniform(5, materialIndex);
 }
 
-auto CDefaultRenderer::RenderUserInterface(SRenderContext &renderContext,
+auto TDefaultRenderer::RenderUserInterface(TRenderContext &renderContext,
                                            TScene &scene) -> void {
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -166,39 +166,39 @@ auto CDefaultRenderer::RenderUserInterface(SRenderContext &renderContext,
 
 }
 
-auto CDefaultRenderer::DestroyFramebuffers() -> void {
+auto TDefaultRenderer::DestroyFramebuffers() -> void {
 
     DeleteFramebuffer(_geometryPassFramebuffer);
 }
 
-auto CDefaultRenderer::CreateFramebuffers(const glm::ivec2& scaledFramebufferSize) -> void {
+auto TDefaultRenderer::CreateFramebuffers(const glm::ivec2& scaledFramebufferSize) -> void {
 
     _geometryPassFramebuffer = CreateFramebuffer({
          .Label = "GeometryPass",
          .ColorAttachments = {
-             SFramebufferColorAttachmentDescriptor{
+             TFramebufferColorAttachmentDescriptor{
                  .Label = "GeometryAlbedo",
-                 .Format = EFormat::R8G8B8A8_SRGB,
-                 .Extent = SExtent2D(scaledFramebufferSize.x,
+                 .Format = TFormat::R8G8B8A8_SRGB,
+                 .Extent = TExtent2D(scaledFramebufferSize.x,
                                      scaledFramebufferSize.y),
-                 .LoadOperation = EFramebufferAttachmentLoadOperation::Clear,
-                 .ClearColor = SFramebufferAttachmentClearColor{0.4f, 0.3f, 0.2f, 1.0f},
+                 .LoadOperation = TFramebufferAttachmentLoadOperation::Clear,
+                 .ClearColor = TFramebufferAttachmentClearColor{0.4f, 0.3f, 0.2f, 1.0f},
              },
-             SFramebufferColorAttachmentDescriptor{
+             TFramebufferColorAttachmentDescriptor{
                  .Label = "GeometryNormals",
-                 .Format = EFormat::R32G32B32A32_FLOAT,
-                 .Extent = SExtent2D(scaledFramebufferSize.x,
+                 .Format = TFormat::R32G32B32A32_FLOAT,
+                 .Extent = TExtent2D(scaledFramebufferSize.x,
                                      scaledFramebufferSize.y),
-                 .LoadOperation = EFramebufferAttachmentLoadOperation::Clear,
-                 .ClearColor = SFramebufferAttachmentClearColor{0.0f, 0.0f, 0.0f, 1.0f},
+                 .LoadOperation = TFramebufferAttachmentLoadOperation::Clear,
+                 .ClearColor = TFramebufferAttachmentClearColor{0.0f, 0.0f, 0.0f, 1.0f},
              },
          },
-         .DepthStencilAttachment = SFramebufferDepthStencilAttachmentDescriptor{
+         .DepthStencilAttachment = TFramebufferDepthStencilAttachmentDescriptor{
              .Label = "GeometryDepth",
-             .Format = EFormat::D24_UNORM_S8_UINT,
-             .Extent = SExtent2D(scaledFramebufferSize.x,
+             .Format = TFormat::D24_UNORM_S8_UINT,
+             .Extent = TExtent2D(scaledFramebufferSize.x,
                                  scaledFramebufferSize.y),
-             .LoadOperation = EFramebufferAttachmentLoadOperation::Clear,
+             .LoadOperation = TFramebufferAttachmentLoadOperation::Clear,
              .ClearDepthStencil = {1.0f, 0},
          }
     });
@@ -210,7 +210,7 @@ auto CDefaultRenderer::CreateFramebuffers(const glm::ivec2& scaledFramebufferSiz
      */
 }
 
-auto CDefaultRenderer::ResizeIfNecessary(const SRenderContext& renderContext) -> void {
+auto TDefaultRenderer::ResizeIfNecessary(const TRenderContext& renderContext) -> void {
 
     if (ApplicationContext.WindowFramebufferResized || ApplicationContext.SceneViewerResized) {
         ApplicationContext.WindowFramebufferScaledSize = glm::ivec2{
@@ -243,7 +243,7 @@ auto CDefaultRenderer::ResizeIfNecessary(const SRenderContext& renderContext) ->
     }
 }
 
-auto CDefaultRenderer::CreateGpuMesh(const std::string& meshName) -> void {
+auto TDefaultRenderer::CreateGpuMesh(const std::string& meshName) -> void {
 
     auto& assetMesh = GetAssetMesh(meshName);
 
@@ -262,7 +262,7 @@ auto CDefaultRenderer::CreateGpuMesh(const std::string& meshName) -> void {
         glNamedBufferStorage(buffers[2], sizeof(uint32_t) * assetMesh.Indices.size(), assetMesh.Indices.data(), 0);
     }
 
-    g_gpuMeshes[meshName] = SGpuMesh{
+    g_gpuMeshes[meshName] = TGpuMesh{
         .VertexPositionBuffer = buffers[0],
         .VertexNormalUvTangentBuffer = buffers[1],
         .IndexBuffer = buffers[2],
@@ -274,17 +274,17 @@ auto CDefaultRenderer::CreateGpuMesh(const std::string& meshName) -> void {
     };
 }
 
-auto CDefaultRenderer::CreateGpuMaterial(const std::string& materialName) -> void {
+auto TDefaultRenderer::CreateGpuMaterial(const std::string& materialName) -> void {
 
 
 }
 
-auto CDefaultRenderer::GetGpuMesh(const std::string& meshName) -> SGpuMesh& {
+auto TDefaultRenderer::GetGpuMesh(const std::string& meshName) -> TGpuMesh& {
 
     return g_gpuMeshes[meshName];
 }
 
-auto CDefaultRenderer::GetGpuMaterial(const std::string& materialName) -> SGpuMaterial& {
+auto TDefaultRenderer::GetGpuMaterial(const std::string& materialName) -> TGpuMaterial& {
 
     return g_gpuMaterials[materialName];
 }

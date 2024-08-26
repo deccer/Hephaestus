@@ -10,71 +10,71 @@
 #include <optional>
 #include <variant>
 
-enum class EFramebufferAttachmentLoadOperation {
+enum class TFramebufferAttachmentLoadOperation {
     Load,
     Clear,
     DontCare
 };
 
-struct SFramebufferAttachmentClearColor {
-    //SFramebufferAttachmentClearColor() = default;
+struct TFramebufferAttachmentClearColor {
+    //TFramebufferAttachmentClearColor() = default;
 
     template<typename... Args>
     requires (sizeof...(Args) <= 4)
-    explicit SFramebufferAttachmentClearColor(const Args& ...args)
+    explicit TFramebufferAttachmentClearColor(const Args& ...args)
         : Color(std::array<std::common_type_t<std::remove_cvref_t<Args>...>, 4>{ args... }) {
     }
 
     std::variant<std::array<float, 4>, std::array<uint32_t, 4>, std::array<int32_t, 4>> Color;
 };
 
-struct SFramebufferAttachmentClearDepthStencil {
+struct TFramebufferAttachmentClearDepthStencil {
     float Depth = {};
     int32_t Stencil = {};
 };
 
-struct SFramebufferColorAttachmentDescriptor {
+struct TFramebufferColorAttachmentDescriptor {
     std::string_view Label = {};
-    EFormat Format = {};
-    SExtent2D Extent = {};
-    EFramebufferAttachmentLoadOperation LoadOperation = {};
-    SFramebufferAttachmentClearColor ClearColor;
+    TFormat Format = {};
+    TExtent2D Extent = {};
+    TFramebufferAttachmentLoadOperation LoadOperation = {};
+    TFramebufferAttachmentClearColor ClearColor;
 };
 
-struct SFramebufferDepthStencilAttachmentDescriptor {
+struct TFramebufferDepthStencilAttachmentDescriptor {
     std::string_view Label = {};
-    EFormat Format = {};
-    SExtent2D Extent = {};
-    EFramebufferAttachmentLoadOperation LoadOperation = {};
-    SFramebufferAttachmentClearDepthStencil ClearDepthStencil = {};
+    TFormat Format = {};
+    TExtent2D Extent = {};
+    TFramebufferAttachmentLoadOperation LoadOperation = {};
+    TFramebufferAttachmentClearDepthStencil ClearDepthStencil = {};
 };
 
-struct SFramebufferDescriptor {
+struct TFramebufferDescriptor {
     std::string_view Label = {};
-    std::array<std::optional<SFramebufferColorAttachmentDescriptor>, 8> ColorAttachments;
-    std::optional<SFramebufferDepthStencilAttachmentDescriptor> DepthStencilAttachment;
+    std::array<std::optional<TFramebufferColorAttachmentDescriptor>, 8> ColorAttachments;
+    std::optional<TFramebufferDepthStencilAttachmentDescriptor> DepthStencilAttachment;
 };
 
-struct SFramebufferColorAttachment {
-    STexture Texture = {};
-    SFramebufferAttachmentClearColor ClearColor;
-    EFramebufferAttachmentLoadOperation LoadOperation;
+struct TFramebufferColorAttachment {
+    TTexture Texture = {};
+    TFramebufferAttachmentClearColor ClearColor;
+    TFramebufferAttachmentLoadOperation LoadOperation;
 };
 
-struct SFramebufferDepthStencilAttachment {
-    STexture Texture = {};
-    SFramebufferAttachmentClearDepthStencil ClearDepthStencil;
-    EFramebufferAttachmentLoadOperation LoadOperation;
+struct TFramebufferDepthStencilAttachment {
+    TTexture Texture = {};
+    TFramebufferAttachmentClearDepthStencil ClearDepthStencil;
+    TFramebufferAttachmentLoadOperation LoadOperation;
 };
 
-struct SFramebuffer {
+struct TFramebuffer {
     uint32_t Id = 0;
-    std::array<std::optional<SFramebufferColorAttachment>, 8> ColorAttachments;
-    std::optional<SFramebufferDepthStencilAttachment> DepthStencilAttachment;
+    std::array<std::optional<TFramebufferColorAttachment>, 8> ColorAttachments;
+    std::optional<TFramebufferDepthStencilAttachment> DepthStencilAttachment;
 };
 
-auto CreateFramebuffer(const SFramebufferDescriptor& framebufferDescriptor) -> SFramebuffer;
+auto CreateFramebuffer(const TFramebufferDescriptor& framebufferDescriptor) -> TFramebuffer;
 
-auto BindFramebuffer(const SFramebuffer& framebuffer) -> void;
+auto BindFramebuffer(const TFramebuffer& framebuffer) -> void;
 
-auto DeleteFramebuffer(const SFramebuffer& framebuffer) -> void;
+auto DeleteFramebuffer(const TFramebuffer& framebuffer) -> void;

@@ -1,4 +1,4 @@
 #pragma once
 
-struct STagCreateGpuResourcesComponent {
+struct TTagCreateGpuResourcesComponent {
 };

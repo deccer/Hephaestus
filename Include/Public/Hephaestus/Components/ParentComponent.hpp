@@ -3,10 +3,10 @@
 #include <vector>
 #include <entt/entt.hpp>
 
-struct SParentComponent {
+struct TParentComponent {
     std::vector<entt::entity> Children;
 };
 
-struct SChildOfComponent {
+struct TChildOfComponent {
     entt::entity Parent;
 };

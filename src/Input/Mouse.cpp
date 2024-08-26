@@ -1,9 +1,9 @@
 #include <Hephaestus/Input/Mouse.hpp>
 
-std::array<bool, static_cast<std::size_t>(EMouseButton::ButtonCount)> Mouse::_buttons = {};
-glm::ivec2 Mouse::_deltaCursorPosition = {};
+std::array<bool, static_cast<std::size_t>(TMouseButton::ButtonCount)> TMouse::_buttons = {};
+glm::ivec2 TMouse::_deltaCursorPosition = {};
 
-auto Mouse::IsButtonPressed(EMouseButton button) -> bool {
+auto TMouse::IsButtonPressed(TMouseButton button) -> bool {
     int index = static_cast<int>(button);
     if (index >= 0 && index < _buttons.size()) {
         return _buttons[index];
@@ -11,15 +11,15 @@ auto Mouse::IsButtonPressed(EMouseButton button) -> bool {
     return false;
 }
 
-auto Mouse::SetDeltaCursorPosition(float deltaX, float deltaY) -> void {
+auto TMouse::SetDeltaCursorPosition(float deltaX, float deltaY) -> void {
     _deltaCursorPosition = {deltaX, deltaY};
 }
 
-auto Mouse::GetDeltaCursorPosition() -> glm::vec2 const {
+auto TMouse::GetDeltaCursorPosition() -> glm::vec2 const {
     return _deltaCursorPosition;
 };
 
-auto Mouse::SetButton(EMouseButton button, bool isPressed) -> void {
+auto TMouse::SetButton(TMouseButton button, bool isPressed) -> void {
     auto index = static_cast<std::size_t>(button);
     if (index >= 0 && index < _buttons.size()) {
         _buttons[index] = isPressed;

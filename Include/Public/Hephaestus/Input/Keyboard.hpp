@@ -3,7 +3,7 @@
 #include <array>
 #include <cstdint>
 
-enum class EKey {
+enum class TKey {
     KeyNone = 0,
     KeyEscape,
     KeyF1,
@@ -86,16 +86,16 @@ enum class EKey {
     KeyCount
 };
 
-class ApplicationAccess;
+class TApplicationAccess;
 
-class Keyboard {
+class TKeyboard {
 public:
-    static auto IsKeyPressed(EKey key) -> bool;
+    static auto IsKeyPressed(TKey key) -> bool;
 
 private:
-    friend class ApplicationAccess;
+    friend class TApplicationAccess;
 
-    static auto SetKey(EKey key, bool pressed) -> void;
+    static auto SetKey(TKey key, bool pressed) -> void;
 
-    static std::array<bool, static_cast<std::size_t>(EKey::KeyCount)> _keys;
+    static std::array<bool, static_cast<std::size_t>(TKey::KeyCount)> _keys;
 };

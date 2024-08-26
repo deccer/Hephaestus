@@ -12,20 +12,20 @@
 struct GLFWwindow;
 struct ImGuiContext;
 
-struct SApplicationCreateInfo {
-    SApplicationSettings Settings = {};
+struct TApplicationCreateInfo {
+    TApplicationSettings Settings = {};
     TScene* Scene = nullptr;
-    CRenderer* Renderer = nullptr;
+    TRenderer* Renderer = nullptr;
 };
 
-class Application {
+class TApplication {
 public:
-    explicit Application(const SApplicationCreateInfo& applicationCreateInfo);
-    ~Application() = default;
+    explicit TApplication(const TApplicationCreateInfo& applicationCreateInfo);
+    ~TApplication() = default;
     auto Run() -> void;
 
 protected:
-    friend class ApplicationAccess;
+    friend class TApplicationAccess;
 
     virtual auto Initialize() -> bool;
     virtual auto Load() -> bool;
@@ -37,9 +37,9 @@ protected:
                                         int32_t framebufferHeight) -> void;
 
 private:
-    SApplicationSettings _applicationSettings;
-    SApplicationContext _applicationContext;
-    std::unique_ptr<CRenderer> _renderer;
+    TApplicationSettings _applicationSettings;
+    TApplicationContext _applicationContext;
+    std::unique_ptr<TRenderer> _renderer;
     std::unique_ptr<TScene> _scene;
     GLFWwindow* _window;
     ImGuiContext* _guiContext;

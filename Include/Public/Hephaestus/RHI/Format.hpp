@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-enum class EFormat : uint32_t {
+enum class TFormat : uint32_t {
 
     Undefined,
 

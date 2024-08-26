@@ -2,6 +2,6 @@
 
 #include <string>
 
-struct SGpuMaterialComponent {
+struct TGpuMaterialComponent {
     std::string MaterialName;
 };

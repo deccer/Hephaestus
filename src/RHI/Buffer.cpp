@@ -5,16 +5,16 @@
 
 #include <utility>
 
-constexpr uint32_t BufferTypeToGL(EBufferType bufferType) {
+constexpr uint32_t BufferTypeToGL(TBufferType bufferType) {
     switch (bufferType) {
-        case EBufferType::UniformBuffer: return GL_UNIFORM_BUFFER;
-        case EBufferType::ShaderStorageBuffer: return GL_SHADER_STORAGE_BUFFER;
+        case TBufferType::UniformBuffer: return GL_UNIFORM_BUFFER;
+        case TBufferType::ShaderStorageBuffer: return GL_SHADER_STORAGE_BUFFER;
         default: std::unreachable();
     }
 }
 
 auto BindBufferAs(uint32_t buffer,
-                  EBufferType bufferType,
+                  TBufferType bufferType,
                   int32_t bindingIndex) -> void {
     glBindBufferBase(BufferTypeToGL(bufferType), bindingIndex, buffer);
 }

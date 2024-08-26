@@ -9,19 +9,19 @@
 #include <string>
 #include <utility>
 
-enum class EFormatClass {
+enum class TFormatClass {
     Float,
     Integer,
     Long
 };
 
-enum class EBaseTypeClass {
+enum class TBaseTypeClass {
     Float,
     Integer,
     UnsignedInteger
 };
 
-enum class ETextureType : uint32_t {
+enum class TTextureType : uint32_t {
     Texture1D,
     Texture1DArray,
     Texture2D,
@@ -33,7 +33,7 @@ enum class ETextureType : uint32_t {
     TextureCubeArray,
 };
 
-enum class ESampleCount : uint32_t {
+enum class TSampleCount : uint32_t {
     One = 1,
     Two = 2,
     Four = 4,
@@ -42,7 +42,7 @@ enum class ESampleCount : uint32_t {
     ThirtyTwo = 32,
 };
 
-enum class EUploadFormat : uint32_t {
+enum class TUploadFormat : uint32_t {
     Undefined,
     Auto,
     R,
@@ -62,7 +62,7 @@ enum class EUploadFormat : uint32_t {
     DepthStencilIndex,
 };
 
-enum class EUploadType : uint32_t {
+enum class TUploadType : uint32_t {
     Undefined,
     Auto,
     UnsignedByte,
@@ -86,7 +86,7 @@ enum class EUploadType : uint32_t {
     UnsignedInteger2101010Reversed,
 };
 
-enum class ETextureAddressMode {
+enum class TTextureAddressMode {
     Repeat,
     RepeatMirrored,
     ClampToEdge,
@@ -94,7 +94,7 @@ enum class ETextureAddressMode {
     ClampToEdgeMirrored,
 };
 
-enum class ETextureMinFilter {
+enum class TTextureMinFilter {
     Nearest,
     NearestMipmapLinear,
     NearestMipmapNearest,
@@ -103,48 +103,48 @@ enum class ETextureMinFilter {
     LinearMipmapNearest,
 };
 
-enum class ETextureMagFilter {
+enum class TTextureMagFilter {
     Nearest,
     Linear
 };
 
-using STextureId = SId<struct TTextureId>;
+using TTextureId = SId<struct TTagTextureId>;
 
-struct SCreateTextureDescriptor {
-    ETextureType TextureType = {};
-    EFormat Format = {};
-    SExtent3D Extent = {};
+struct TCreateTextureDescriptor {
+    TTextureType TextureType = {};
+    TFormat Format = {};
+    TExtent3D Extent = {};
     int32_t MipMapLevels = 0;
     int32_t Layers = 0;
-    ESampleCount SampleCount = {};
+    TSampleCount SampleCount = {};
     std::string Label = {};
 };
 
-struct SUploadTextureDescriptor {
+struct TUploadTextureDescriptor {
     uint32_t Level = {};
-    SOffset3D Offset = {};
-    SExtent3D Extent = {};
-    EUploadFormat UploadFormat = EUploadFormat::Auto;
-    EUploadType UploadType = EUploadType::Auto;
+    TOffset3D Offset = {};
+    TExtent3D Extent = {};
+    TUploadFormat UploadFormat = TUploadFormat::Auto;
+    TUploadType UploadType = TUploadType::Auto;
     const void* PixelData = nullptr;
 };
 
-struct STexture {
+struct TTexture {
     uint32_t Id = {};
-    EFormat Format = {};
-    SExtent3D Extent = {};
-    ETextureType TextureType = {};
+    TFormat Format = {};
+    TExtent3D Extent = {};
+    TTextureType TextureType = {};
 };
 
-auto FormatToBaseTypeClass(EFormat format) -> EBaseTypeClass;
-auto FormatToUnderlyingOpenGLType(EFormat format) -> uint32_t;
-auto FormatToComponentCount(EFormat format) -> int32_t;
-auto IsFormatNormalized(EFormat format) -> int32_t;
-auto FormatToFormatClass(EFormat format) -> EFormatClass;
+auto FormatToBaseTypeClass(TFormat format) -> TBaseTypeClass;
+auto FormatToUnderlyingOpenGLType(TFormat format) -> uint32_t;
+auto FormatToComponentCount(TFormat format) -> int32_t;
+auto IsFormatNormalized(TFormat format) -> int32_t;
+auto FormatToFormatClass(TFormat format) -> TFormatClass;
 
-auto GetTexture(STextureId id) -> STexture&;
-auto CreateTexture(const SCreateTextureDescriptor& createTextureDescriptor) -> STextureId;
-auto UploadTexture(const STextureId& textureId,
-                   const SUploadTextureDescriptor& updateTextureDescriptor) -> void;
-auto MakeTextureResident(const STextureId& textureId) -> uint64_t;
-auto GenerateMipmaps(const STextureId& textureId) -> void;
+auto GetTexture(TTextureId id) -> TTexture&;
+auto CreateTexture(const TCreateTextureDescriptor& createTextureDescriptor) -> TTextureId;
+auto UploadTexture(const TTextureId& textureId,
+                   const TUploadTextureDescriptor& updateTextureDescriptor) -> void;
+auto MakeTextureResident(const TTextureId& textureId) -> uint64_t;
+auto GenerateMipmaps(const TTextureId& textureId) -> void;

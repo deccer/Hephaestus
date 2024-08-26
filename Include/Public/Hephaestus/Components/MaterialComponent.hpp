@@ -2,6 +2,6 @@
 
 #include <string>
 
-struct SMaterialComponent {
+struct TMaterialComponent {
     std::string MaterialName;
 };

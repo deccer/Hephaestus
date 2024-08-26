@@ -17,18 +17,18 @@ auto TScene::AddEntity(std::optional<entt::entity> parent,
 
     auto entity = _registry.create();
     if (parent.has_value()) {
-        auto parentComponent = _registry.get_or_emplace<SParentComponent>(parent.value());
+        auto parentComponent = _registry.get_or_emplace<TParentComponent>(parent.value());
         parentComponent.Children.push_back(entity);
-        _registry.emplace<SChildOfComponent>(entity, parent.value());
+        _registry.emplace<TChildOfComponent>(entity, parent.value());
     }
     if (!assetMeshName.empty()) {
-        _registry.emplace<SMeshComponent>(entity, assetMeshName);
+        _registry.emplace<TMeshComponent>(entity, assetMeshName);
     }
     if (!assetMaterialName.empty()) {
-        _registry.emplace<SMaterialComponent>(entity, assetMaterialName);
+        _registry.emplace<TMaterialComponent>(entity, assetMaterialName);
     }
-    _registry.emplace<STransformComponent>(entity, initialTransform);
-    _registry.emplace<STagCreateGpuResourcesComponent>(entity);
+    _registry.emplace<TTransformComponent>(entity, initialTransform);
+    _registry.emplace<TTagCreateGpuResourcesComponent>(entity);
 
     return entity;
 }

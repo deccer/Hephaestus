@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <glm/vec2.hpp>
 
-enum class EMouseButton {
+enum class TMouseButton {
     None = 0,
     Left,
     Right,
@@ -12,21 +12,21 @@ enum class EMouseButton {
     ButtonCount
 };
 
-class Application;
-class ApplicationAccess;
+class TApplication;
+class TApplicationAccess;
 
-class Mouse {
+class TMouse {
 public:
-    static auto IsButtonPressed(EMouseButton button) -> bool;
+    static auto IsButtonPressed(TMouseButton button) -> bool;
     static auto GetDeltaCursorPosition() -> glm::vec2 const;
 
 private:
-    friend class Application;
-    friend class ApplicationAccess;
+    friend class TApplication;
+    friend class TApplicationAccess;
 
-    static auto SetButton(EMouseButton button, bool isPressed) -> void;
+    static auto SetButton(TMouseButton button, bool isPressed) -> void;
     static auto SetDeltaCursorPosition(float deltaX, float deltaY) -> void;
 
-    static std::array<bool, static_cast<std::size_t>(EMouseButton::ButtonCount)> _buttons;
+    static std::array<bool, static_cast<std::size_t>(TMouseButton::ButtonCount)> _buttons;
     static glm::ivec2 _deltaCursorPosition;
 };

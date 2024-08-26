@@ -5,26 +5,26 @@
 
 struct TScene;
 
-struct SRenderContext {
+struct TRenderContext {
     float DeltaTime;
     bool IsSrgbDisabled;
     uint64_t FrameCounter;
 };
 
-class CRenderer {
+class TRenderer {
 public:
-    explicit CRenderer(const SApplicationSettings& applicationSettings,
-                       const SApplicationContext& applicationContext) : ApplicationSettings(applicationSettings), ApplicationContext(applicationContext) {}
+    explicit TRenderer(const TApplicationSettings& applicationSettings,
+                       const TApplicationContext& applicationContext) : ApplicationSettings(applicationSettings), ApplicationContext(applicationContext) {}
 
-    virtual ~CRenderer() = default;
+    virtual ~TRenderer() = default;
     virtual auto Load() -> bool = 0;
     virtual auto Unload() -> void = 0;
-    virtual auto Render(SRenderContext& renderContext,
+    virtual auto Render(TRenderContext& renderContext,
                         TScene& scene) -> void = 0;
-    virtual auto RenderUserInterface(SRenderContext& renderContext,
+    virtual auto RenderUserInterface(TRenderContext& renderContext,
                                      TScene& scene) -> void = 0;
 protected:
-    SApplicationSettings ApplicationSettings = {};
-    SApplicationContext ApplicationContext = {};
+    TApplicationSettings ApplicationSettings = {};
+    TApplicationContext ApplicationContext = {};
 };
 

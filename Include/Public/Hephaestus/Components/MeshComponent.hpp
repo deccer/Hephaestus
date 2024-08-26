@@ -2,6 +2,6 @@
 
 #include <string>
 
-struct SMeshComponent {
+struct TMeshComponent {
     std::string MeshName;
 };
