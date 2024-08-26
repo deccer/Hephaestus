@@ -14,7 +14,8 @@
 class TDefaultRenderer : public TRenderer {
 public:
     TDefaultRenderer(const TApplicationSettings& applicationSettings,
-                    const TApplicationContext& applicationContext) : TRenderer(applicationSettings, applicationContext) {}
+                     const TApplicationContext& applicationContext)
+                     : TRenderer(applicationSettings, applicationContext) {}
     ~TDefaultRenderer() override = default;
 
     auto Load() -> bool override;
