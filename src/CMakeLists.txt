@@ -15,8 +15,8 @@ add_library(Hephaestus STATIC
     Application.cpp
 )
 target_include_directories(Hephaestus
-    PUBLIC ../Include/Public
-    PRIVATE ../Include/Private
+    PUBLIC ../include/Public
+    PRIVATE ../include/Private
 )
 target_link_libraries(Hephaestus
     PRIVATE glfw
