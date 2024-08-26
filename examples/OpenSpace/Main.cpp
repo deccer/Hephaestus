@@ -3,9 +3,9 @@
 
 #include <cstdint>
 
-class MyRenderer : public IRenderer {
+class CMyRenderer : public CRenderer {
 public:
-    ~MyRenderer() override {
+    ~CMyRenderer() override {
 
     }
 
@@ -18,12 +18,12 @@ public:
     }
 
     auto Render(SRenderContext& renderContext,
-                IScene& scene) -> void override {
+                TScene& scene) -> void override {
 
     }
 };
 
-class MyScene : public Scene {
+class TMyScene : public TScene {
 public:
 
 };
@@ -32,7 +32,7 @@ auto main(
     [[maybe_unused]] int32_t argc,
     [[maybe_unused]] char* argv[]) -> int32_t {
 
-    //auto myRenderer = std::make_unique<MyRenderer>();
+    //auto myRenderer = std::make_unique<CMyRenderer>();
     Application application({
         .Settings = {
             .ResolutionWidth = 1920,

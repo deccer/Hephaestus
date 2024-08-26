@@ -216,13 +216,13 @@ Application::Application(const SApplicationCreateInfo& applicationCreateInfo)
     _applicationContext.SceneViewerSize = {_applicationSettings.ResolutionWidth, _applicationSettings.ResolutionHeight};
 
     if (applicationCreateInfo.Scene == nullptr) {
-        _scene = std::make_unique<DefaultScene>();
+        _scene = std::make_unique<TDefaultScene>();
     } else {
         _scene.reset(applicationCreateInfo.Scene);
     }
 
     if (applicationCreateInfo.Renderer == nullptr) {
-        _renderer = std::make_unique<DefaultRenderer>(_applicationSettings, _applicationContext);
+        _renderer = std::make_unique<CDefaultRenderer>(_applicationSettings, _applicationContext);
     } else {
         _renderer.reset(applicationCreateInfo.Renderer);
     }
@@ -418,6 +418,10 @@ auto Application::Initialize() -> bool {
 auto Application::Load() -> bool {
 
     if (!_renderer->Load()) {
+        return false;
+    }
+
+    if (!_scene->Load()) {
         return false;
     }
 

@@ -1,4 +1,18 @@
 #include <Hephaestus/DefaultRenderer.hpp>
+#include <Hephaestus/Scene.hpp>
+
+#include <Hephaestus/Components/MeshComponent.hpp>
+#include <Hephaestus/Components/MaterialComponent.hpp>
+#include <Hephaestus/Components/TransformComponent.hpp>
+
+#include <Hephaestus/Components/TagCreateGpuResourcesComponent.hpp>
+#include <Hephaestus/Components/GpuMaterialComponent.hpp>
+#include <Hephaestus/Components/GpuMeshComponent.hpp>
+
+#include <Hephaestus/RHI/Debug.hpp>
+#include <Hephaestus/RHI/VertexTypes.hpp>
+
+#include <Hephaestus/Assets/Assets.hpp>
 
 #include <glad/gl.h>
 #include <imgui.h>
@@ -6,7 +20,15 @@
 #include <imgui_impl_opengl3.h>
 #include <spdlog/spdlog.h>
 
-auto DefaultRenderer::Load() -> bool {
+#include <parallel_hashmap/phmap.h>
+
+phmap::flat_hash_map<std::string, SGpuMeshComponent> g_gpuMeshComponents = {};
+phmap::flat_hash_map<std::string, SGpuMaterialComponent> g_gpuMaterialComponents = {};
+
+phmap::flat_hash_map<std::string, SGpuMesh> g_gpuMeshes = {};
+phmap::flat_hash_map<std::string, SGpuMaterial> g_gpuMaterials = {};
+
+auto CDefaultRenderer::Load() -> bool {
 
     ApplicationContext.WindowFramebufferScaledSize = glm::ivec2{
         ApplicationContext.WindowFramebufferSize.x * ApplicationSettings.ResolutionScale,
@@ -26,8 +48,8 @@ auto DefaultRenderer::Load() -> bool {
 
     auto geometryPassResult = CreateGraphicsPipeline({
         .Label = "GeometryPass",
-        .VertexShaderFilePath = "data/shaders/Simple.vs.glsl",
-        .FragmentShaderFilePath = "data/shaders/Simple.fs.glsl",
+        .VertexShaderFilePath = "data/Shaders/Default/Scene.vs.glsl",
+        .FragmentShaderFilePath = "data/Shaders/Default/Scene.fs.glsl",
         .InputAssembly = {
             .PrimitiveTopology = EPrimitiveTopology::Triangles
         },
@@ -38,70 +60,82 @@ auto DefaultRenderer::Load() -> bool {
         return false;
     }
 
-    _geometryPassPipeline = *geometryPassResult;
+    _geometryPassPipelineId = *geometryPassResult;
 
     auto fullscreenPassResult = CreateGraphicsPipeline({
         .Label = "FullscreenPass",
-        .VertexShaderFilePath = "data/shaders/FST.vs.glsl",
-        .FragmentShaderFilePath = "data/shaders/FST.fs.glsl",
+        .VertexShaderFilePath = "data/Shaders/FST.vs.glsl",
+        .FragmentShaderFilePath = "data/Shaders/FST.fs.glsl",
         .InputAssembly = {
                 .PrimitiveTopology = EPrimitiveTopology::Triangles
         }
     });
 
-    _fullscreenPassPipeline = *fullscreenPassResult;
+    _fullscreenPassPipelineId = *fullscreenPassResult;
 
     return true;
 }
 
-auto DefaultRenderer::Unload() -> void {
+auto CDefaultRenderer::Unload() -> void {
 
     DestroyFramebuffers();
-    DeleteGraphicsPipeline(_geometryPassPipeline);
-    DeleteGraphicsPipeline(_fullscreenPassPipeline);
+    DeleteGraphicsPipeline(_geometryPassPipelineId);
+    DeleteGraphicsPipeline(_fullscreenPassPipelineId);
 }
 
-auto DefaultRenderer::Render(SRenderContext &renderContext,
-                             IScene &scene) -> void {
+auto CDefaultRenderer::Render(SRenderContext& renderContext,
+                              TScene& scene) -> void {
 
-    if (ApplicationContext.WindowFramebufferResized || ApplicationContext.SceneViewerResized) {
-        ApplicationContext.WindowFramebufferScaledSize = glm::ivec2{
-                ApplicationContext.WindowFramebufferSize.x * ApplicationSettings.ResolutionScale,
-                ApplicationContext.WindowFramebufferSize.y * ApplicationSettings.ResolutionScale};
-        ApplicationContext.SceneViewerScaledSize = glm::ivec2{
-                ApplicationContext.SceneViewerSize.x * ApplicationSettings.ResolutionScale,
-                ApplicationContext.SceneViewerSize.y * ApplicationSettings.ResolutionScale};
+    ResizeIfNecessary(renderContext);
 
-        glm::ivec2 scaledFramebufferSize = {};
+    auto& registry = scene.GetRegistry();
 
-        if (ApplicationContext.IsEditor) {
-            scaledFramebufferSize = ApplicationContext.SceneViewerScaledSize;
-        } else {
-            scaledFramebufferSize = ApplicationContext.WindowFramebufferScaledSize;
-        }
+    ///////////////////////
+    // Create Gpu Resources if necessary
+    ///////////////////////
 
-        if (renderContext.FrameCounter > 0) {
-            DestroyFramebuffers();
-            if (scaledFramebufferSize.x + scaledFramebufferSize.y <= glm::epsilon<float>()) {
-                scaledFramebufferSize = ApplicationContext.WindowFramebufferScaledSize;
-            }
-        }
-        CreateFramebuffers(scaledFramebufferSize);
+    auto createGpuResourcesNecessaryView = registry.view<STagCreateGpuResourcesComponent>();
+    for (auto& entity : createGpuResourcesNecessaryView) {
 
-        glViewport(0, 0, scaledFramebufferSize.x, scaledFramebufferSize.y);
+        auto& meshComponent = registry.get<SMeshComponent>(entity);
+        auto& materialComponent = registry.get<SMaterialComponent>(entity);
 
-        ApplicationContext.WindowFramebufferResized = false;
-        ApplicationContext.SceneViewerResized = false;
+        CreateGpuMesh(meshComponent.MeshName);
+        CreateGpuMaterial(materialComponent.MaterialName);
+
+        registry.emplace<SGpuMeshComponent>(entity, meshComponent.MeshName);
+        registry.emplace<SGpuMaterialComponent>(entity, materialComponent.MaterialName);
+
+        registry.remove<STagCreateGpuResourcesComponent>(entity);
     }
 
     BindFramebuffer(_geometryPassFramebuffer);
+    auto& geometryGraphicsPipeline = GetGraphicsPipeline(_geometryPassPipelineId);
+
+    auto worldMatrix = glm::mat4(1.0f);
+    auto materialIndex = 0u;
+
+    geometryGraphicsPipeline.Bind();
+
+    auto gpuResourcesView = registry.view<SGpuMeshComponent>();
+    for (auto& entity : gpuResourcesView) {
+
+        auto& gpuMeshComponent = registry.get<SGpuMeshComponent>(entity);
+        auto& gpuMaterialComponent = registry.get<SGpuMaterialComponent>(entity);
+        auto& transformComponent = registry.get<STransformComponent>(entity);
+
+        auto& gpuMesh = GetGpuMesh(gpuMeshComponent.MeshName);
+        auto& gpuMaterial = GetGpuMaterial(gpuMaterialComponent.MaterialName);
+    }
+    geometryGraphicsPipeline.SetUniform(0, worldMatrix);
+    geometryGraphicsPipeline.SetUniform(5, materialIndex);
 }
 
-auto DefaultRenderer::RenderUserInterface(SRenderContext &renderContext,
-                                          IScene &scene) -> void {
+auto CDefaultRenderer::RenderUserInterface(SRenderContext &renderContext,
+                                           TScene &scene) -> void {
 
-    Renderer::RenderUserInterface(renderContext, scene);
-    auto& fullscreenPipeline = GetGraphicsPipeline(_fullscreenPassPipeline);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    auto& fullscreenPipeline = GetGraphicsPipeline(_fullscreenPassPipelineId);
 
     fullscreenPipeline.Bind();
     fullscreenPipeline.BindTexture(0, _geometryPassFramebuffer.ColorAttachments[0].value().Texture.Id);
@@ -132,13 +166,12 @@ auto DefaultRenderer::RenderUserInterface(SRenderContext &renderContext,
 
 }
 
-auto DefaultRenderer::DestroyFramebuffers() -> void {
+auto CDefaultRenderer::DestroyFramebuffers() -> void {
 
     DeleteFramebuffer(_geometryPassFramebuffer);
-    //DeleteFramebuffer(_resolvePassFramebuffer);
 }
 
-auto DefaultRenderer::CreateFramebuffers(const glm::ivec2& scaledFramebufferSize) -> void {
+auto CDefaultRenderer::CreateFramebuffers(const glm::ivec2& scaledFramebufferSize) -> void {
 
     _geometryPassFramebuffer = CreateFramebuffer({
          .Label = "GeometryPass",
@@ -175,4 +208,83 @@ auto DefaultRenderer::CreateFramebuffers(const glm::ivec2& scaledFramebufferSize
         .Label = "ResolvePass"
     });
      */
+}
+
+auto CDefaultRenderer::ResizeIfNecessary(const SRenderContext& renderContext) -> void {
+
+    if (ApplicationContext.WindowFramebufferResized || ApplicationContext.SceneViewerResized) {
+        ApplicationContext.WindowFramebufferScaledSize = glm::ivec2{
+            ApplicationContext.WindowFramebufferSize.x * ApplicationSettings.ResolutionScale,
+            ApplicationContext.WindowFramebufferSize.y * ApplicationSettings.ResolutionScale};
+        ApplicationContext.SceneViewerScaledSize = glm::ivec2{
+            ApplicationContext.SceneViewerSize.x * ApplicationSettings.ResolutionScale,
+            ApplicationContext.SceneViewerSize.y * ApplicationSettings.ResolutionScale};
+
+        glm::ivec2 scaledFramebufferSize = {};
+
+        if (ApplicationContext.IsEditor) {
+            scaledFramebufferSize = ApplicationContext.SceneViewerScaledSize;
+        } else {
+            scaledFramebufferSize = ApplicationContext.WindowFramebufferScaledSize;
+        }
+
+        if (renderContext.FrameCounter > 0) {
+            DestroyFramebuffers();
+            if (scaledFramebufferSize.x + scaledFramebufferSize.y <= glm::epsilon<float>()) {
+                scaledFramebufferSize = ApplicationContext.WindowFramebufferScaledSize;
+            }
+        }
+        CreateFramebuffers(scaledFramebufferSize);
+
+        glViewport(0, 0, scaledFramebufferSize.x, scaledFramebufferSize.y);
+
+        ApplicationContext.WindowFramebufferResized = false;
+        ApplicationContext.SceneViewerResized = false;
+    }
+}
+
+auto CDefaultRenderer::CreateGpuMesh(const std::string& meshName) -> void {
+
+    auto& assetMesh = GetAssetMesh(meshName);
+
+    uint32_t buffers[3] = {};
+    {
+        glCreateBuffers(3, buffers);
+
+        SetDebugLabel(buffers[0], GL_BUFFER, std::format("{}_TGpuVertexPosition", meshName));
+        SetDebugLabel(buffers[1], GL_BUFFER, std::format("{}_TGpuVertexNormalUvTangent", meshName));
+        SetDebugLabel(buffers[2], GL_BUFFER, std::format("{}_Indices", meshName));
+
+        glNamedBufferStorage(buffers[0], sizeof(TGpuVertexPosition) * assetMesh.VertexPositions.size(),
+                             assetMesh.VertexPositions.data(), 0);
+        glNamedBufferStorage(buffers[1], sizeof(TGpuVertexNormalUvTangent) * assetMesh.VertexNormalUvTangents.size(),
+                             assetMesh.VertexNormalUvTangents.data(), 0);
+        glNamedBufferStorage(buffers[2], sizeof(uint32_t) * assetMesh.Indices.size(), assetMesh.Indices.data(), 0);
+    }
+
+    g_gpuMeshes[meshName] = SGpuMesh{
+        .VertexPositionBuffer = buffers[0],
+        .VertexNormalUvTangentBuffer = buffers[1],
+        .IndexBuffer = buffers[2],
+
+        .VertexCount = assetMesh.VertexPositions.size(),
+        .IndexCount = assetMesh.Indices.size(),
+
+        .InitialTransform = assetMesh.InitialTransform,
+    };
+}
+
+auto CDefaultRenderer::CreateGpuMaterial(const std::string& materialName) -> void {
+
+
+}
+
+auto CDefaultRenderer::GetGpuMesh(const std::string& meshName) -> SGpuMesh& {
+
+    return g_gpuMeshes[meshName];
+}
+
+auto CDefaultRenderer::GetGpuMaterial(const std::string& materialName) -> SGpuMaterial& {
+
+    return g_gpuMaterials[materialName];
 }

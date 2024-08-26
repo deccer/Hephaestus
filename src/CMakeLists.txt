@@ -4,8 +4,8 @@ add_library(Hephaestus STATIC
     RHI/Texture.cpp
     RHI/Framebuffer.cpp
     RHI/Pipelines.cpp
-    Renderer.cpp
     Scene.cpp
+    Assets/Assets.cpp
 
     DefaultRenderer.cpp
     DefaultScene.cpp
@@ -15,8 +15,8 @@ add_library(Hephaestus STATIC
     Application.cpp
 )
 target_include_directories(Hephaestus
-    PUBLIC Public
-    PRIVATE Private
+    PUBLIC ../Include/Public
+    PRIVATE ../Include/Private
 )
 target_link_libraries(Hephaestus
     PRIVATE glfw
@@ -27,4 +27,6 @@ target_link_libraries(Hephaestus
     PRIVATE spdlog::spdlog_header_only
     PRIVATE stb
     PRIVATE EnTT::EnTT
+    PRIVATE phmap
+    PRIVATE fastgltf
 )

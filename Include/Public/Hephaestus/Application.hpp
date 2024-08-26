@@ -12,23 +12,17 @@
 struct GLFWwindow;
 struct ImGuiContext;
 
-struct IApplication {
-public:
-    virtual ~IApplication() = default;
-    virtual auto Run() -> void = 0;
-};
-
 struct SApplicationCreateInfo {
     SApplicationSettings Settings = {};
-    IScene* Scene = nullptr;
-    IRenderer* Renderer = nullptr;
+    TScene* Scene = nullptr;
+    CRenderer* Renderer = nullptr;
 };
 
-class Application : public IApplication {
+class Application {
 public:
     explicit Application(const SApplicationCreateInfo& applicationCreateInfo);
-    ~Application() override = default;
-    auto Run() -> void override;
+    ~Application() = default;
+    auto Run() -> void;
 
 protected:
     friend class ApplicationAccess;
@@ -45,8 +39,8 @@ protected:
 private:
     SApplicationSettings _applicationSettings;
     SApplicationContext _applicationContext;
-    std::unique_ptr<IRenderer> _renderer;
-    std::unique_ptr<IScene> _scene;
+    std::unique_ptr<CRenderer> _renderer;
+    std::unique_ptr<TScene> _scene;
     GLFWwindow* _window;
     ImGuiContext* _guiContext;
 };

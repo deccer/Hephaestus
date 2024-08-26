@@ -9,4 +9,5 @@ target_link_libraries(OpenSpace
     PRIVATE Hephaestus
     PRIVATE glm-header-only
     PRIVATE EnTT::EnTT
+    PRIVATE phmap
 )
