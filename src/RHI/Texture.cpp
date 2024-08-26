@@ -786,7 +786,8 @@ inline auto GetTexture(TTextureId id) -> TTexture& {
 
 auto CreateTexture(const TCreateTextureDescriptor& createTextureDescriptor) -> TTextureId {
 
-    TTexture texture = {};
+    const auto textureId = TTextureId(g_textures.size());
+    auto& texture = g_textures.emplace_back();
 
     glCreateTextures(TextureTypeToGL(createTextureDescriptor.TextureType), 1, &texture.Id);
     if (!createTextureDescriptor.Label.empty()) {
@@ -869,9 +870,6 @@ auto CreateTexture(const TCreateTextureDescriptor& createTextureDescriptor) -> T
         default:
             std::unreachable();
     }
-
-    const auto textureId = TTextureId(g_textures.size());
-    g_textures.emplace_back(texture);
 
     return textureId;
 }
