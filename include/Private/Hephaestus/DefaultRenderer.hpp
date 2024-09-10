@@ -26,7 +26,7 @@ public:
                              TScene& scene) -> void override;
 private:
     auto DestroyFramebuffers() -> void;
-    auto CreateFramebuffers(const glm::ivec2& scaledFramebufferSize) -> void;
+    auto CreateFramebuffers(const glm::ivec2& framebufferSize) -> void;
     auto ResizeIfNecessary(const TRenderContext& renderContext) -> void;
 
     auto CreateGpuMesh(const std::string& meshName) -> void;
@@ -35,7 +35,8 @@ private:
     auto GetGpuMesh(const std::string& meshName) -> TGpuMesh&;
     auto GetGpuMaterial(const std::string& materialName) -> TGpuMaterial&;
 
-    TFramebuffer _geometryPassFramebuffer;
+    TFramebuffer _geometryPassFramebuffer; //TODO(deccer) hide TFramebuffer, expose TFramebufferId instead
     TGraphicsPipelineId _geometryPassPipelineId = TGraphicsPipelineId::Invalid;
     TGraphicsPipelineId _fullscreenPassPipelineId = TGraphicsPipelineId::Invalid;
+    uint32_t _gpuConstantsBuffer = 0;
 };

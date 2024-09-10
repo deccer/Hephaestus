@@ -10,6 +10,7 @@ public:
     }
 
     auto Load() -> bool override {
+
         return true;
     }
 
@@ -32,7 +33,7 @@ auto main(
     [[maybe_unused]] int32_t argc,
     [[maybe_unused]] char* argv[]) -> int32_t {
 
-    //auto myRenderer = std::make_unique<CMyRenderer>();
+    //auto myRenderer = std::make_unique<TMyRenderer>();
     TApplication application({
         .Settings = {
             .ResolutionWidth = 1920,

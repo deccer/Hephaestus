@@ -11,6 +11,7 @@
 
 #include <Hephaestus/RHI/Debug.hpp>
 #include <Hephaestus/RHI/VertexTypes.hpp>
+#include <Hephaestus/RHI/Buffer.hpp>
 
 #include <Hephaestus/Assets/Assets.hpp>
 
@@ -27,6 +28,11 @@ phmap::flat_hash_map<std::string, TGpuMaterialComponent> g_gpuMaterialComponents
 
 phmap::flat_hash_map<std::string, TGpuMesh> g_gpuMeshes = {};
 phmap::flat_hash_map<std::string, TGpuMaterial> g_gpuMaterials = {};
+
+struct TConstants {
+    glm::mat4 ProjectionMatrix;
+    glm::mat4 ViewMatrix;
+} g_constants = {};
 
 auto TDefaultRenderer::Load() -> bool {
 
@@ -73,6 +79,10 @@ auto TDefaultRenderer::Load() -> bool {
 
     _fullscreenPassPipelineId = *fullscreenPassResult;
 
+    g_constants.ProjectionMatrix = glm::mat4(1.0f);
+    g_constants.ViewMatrix = glm::mat4(1.0f);
+    _gpuConstantsBuffer = CreateBuffer("ConstantsBuffer", sizeof(TConstants), &g_constants, 0);
+
     return true;
 }
 
@@ -81,6 +91,8 @@ auto TDefaultRenderer::Unload() -> void {
     DestroyFramebuffers();
     DeleteGraphicsPipeline(_geometryPassPipelineId);
     DeleteGraphicsPipeline(_fullscreenPassPipelineId);
+
+    DeleteBuffer(_gpuConstantsBuffer);
 }
 
 auto TDefaultRenderer::Render(TRenderContext& renderContext,
@@ -115,7 +127,12 @@ auto TDefaultRenderer::Render(TRenderContext& renderContext,
     auto worldMatrix = glm::mat4(1.0f);
     auto materialIndex = 0u;
 
+    g_constants.ProjectionMatrix = glm::mat4(1.0f);
+    g_constants.ViewMatrix = glm::mat4(1.0f);
+    UpdateBuffer(_gpuConstantsBuffer, 0, sizeof(TConstants), &g_constants);
+
     geometryGraphicsPipeline.Bind();
+    geometryGraphicsPipeline.BindBufferAsUniformBuffer(_gpuConstantsBuffer, 0);
 
     auto gpuResourcesView = registry.view<TGpuMeshComponent>();
     for (auto& entity : gpuResourcesView) {
@@ -126,9 +143,14 @@ auto TDefaultRenderer::Render(TRenderContext& renderContext,
 
         auto& gpuMesh = GetGpuMesh(gpuMeshComponent.MeshName);
         auto& gpuMaterial = GetGpuMaterial(gpuMaterialComponent.MaterialName);
+
+        geometryGraphicsPipeline.SetUniform(0, worldMatrix);
+        geometryGraphicsPipeline.SetUniform(5, materialIndex);
+
+        geometryGraphicsPipeline.BindBufferAsVertexBuffer(gpuMesh.VertexPositionBuffer, 0, 0, sizeof(TGpuVertexPosition));
+        geometryGraphicsPipeline.BindBufferAsVertexBuffer(gpuMesh.VertexNormalUvTangentBuffer, 1, 0, sizeof(TGpuVertexPosition));
+        geometryGraphicsPipeline.DrawElements(gpuMesh.IndexBuffer, gpuMesh.IndexCount);
     }
-    geometryGraphicsPipeline.SetUniform(0, worldMatrix);
-    geometryGraphicsPipeline.SetUniform(5, materialIndex);
 }
 
 auto TDefaultRenderer::RenderUserInterface(TRenderContext &renderContext,
@@ -171,7 +193,7 @@ auto TDefaultRenderer::DestroyFramebuffers() -> void {
     DeleteFramebuffer(_geometryPassFramebuffer);
 }
 
-auto TDefaultRenderer::CreateFramebuffers(const glm::ivec2& scaledFramebufferSize) -> void {
+auto TDefaultRenderer::CreateFramebuffers(const glm::ivec2& framebufferSize) -> void {
 
     _geometryPassFramebuffer = CreateFramebuffer({
          .Label = "GeometryPass",
@@ -179,16 +201,16 @@ auto TDefaultRenderer::CreateFramebuffers(const glm::ivec2& scaledFramebufferSiz
              TFramebufferColorAttachmentDescriptor{
                  .Label = "GeometryAlbedo",
                  .Format = TFormat::R8G8B8A8_SRGB,
-                 .Extent = TExtent2D(scaledFramebufferSize.x,
-                                     scaledFramebufferSize.y),
+                 .Extent = TExtent2D(framebufferSize.x,
+                                     framebufferSize.y),
                  .LoadOperation = TFramebufferAttachmentLoadOperation::Clear,
                  .ClearColor = TFramebufferAttachmentClearColor{0.4f, 0.3f, 0.2f, 1.0f},
              },
              TFramebufferColorAttachmentDescriptor{
                  .Label = "GeometryNormals",
                  .Format = TFormat::R32G32B32A32_FLOAT,
-                 .Extent = TExtent2D(scaledFramebufferSize.x,
-                                     scaledFramebufferSize.y),
+                 .Extent = TExtent2D(framebufferSize.x,
+                                     framebufferSize.y),
                  .LoadOperation = TFramebufferAttachmentLoadOperation::Clear,
                  .ClearColor = TFramebufferAttachmentClearColor{0.0f, 0.0f, 0.0f, 1.0f},
              },
@@ -196,8 +218,8 @@ auto TDefaultRenderer::CreateFramebuffers(const glm::ivec2& scaledFramebufferSiz
          .DepthStencilAttachment = TFramebufferDepthStencilAttachmentDescriptor{
              .Label = "GeometryDepth",
              .Format = TFormat::D24_UNORM_S8_UINT,
-             .Extent = TExtent2D(scaledFramebufferSize.x,
-                                 scaledFramebufferSize.y),
+             .Extent = TExtent2D(framebufferSize.x,
+                                 framebufferSize.y),
              .LoadOperation = TFramebufferAttachmentLoadOperation::Clear,
              .ClearDepthStencil = {1.0f, 0},
          }
@@ -243,17 +265,17 @@ auto TDefaultRenderer::ResizeIfNecessary(const TRenderContext& renderContext) ->
     }
 }
 
-auto TDefaultRenderer::CreateGpuMesh(const std::string& meshName) -> void {
+auto TDefaultRenderer::CreateGpuMesh(const std::string& assetMeshName) -> void {
 
-    auto& assetMesh = GetAssetMesh(meshName);
+    auto& assetMesh = GetAssetMesh(assetMeshName);
 
     uint32_t buffers[3] = {};
     {
         glCreateBuffers(3, buffers);
 
-        SetDebugLabel(buffers[0], GL_BUFFER, std::format("{}_TGpuVertexPosition", meshName));
-        SetDebugLabel(buffers[1], GL_BUFFER, std::format("{}_TGpuVertexNormalUvTangent", meshName));
-        SetDebugLabel(buffers[2], GL_BUFFER, std::format("{}_Indices", meshName));
+        SetDebugLabel(buffers[0], GL_BUFFER, std::format("{}_GpuVertexPosition", assetMeshName));
+        SetDebugLabel(buffers[1], GL_BUFFER, std::format("{}_GpuVertexNormalUvTangent", assetMeshName));
+        SetDebugLabel(buffers[2], GL_BUFFER, std::format("{}_Indices", assetMeshName));
 
         glNamedBufferStorage(buffers[0], sizeof(TGpuVertexPosition) * assetMesh.VertexPositions.size(),
                              assetMesh.VertexPositions.data(), 0);
@@ -262,7 +284,7 @@ auto TDefaultRenderer::CreateGpuMesh(const std::string& meshName) -> void {
         glNamedBufferStorage(buffers[2], sizeof(uint32_t) * assetMesh.Indices.size(), assetMesh.Indices.data(), 0);
     }
 
-    g_gpuMeshes[meshName] = TGpuMesh{
+    g_gpuMeshes[assetMeshName] = TGpuMesh{
         .VertexPositionBuffer = buffers[0],
         .VertexNormalUvTangentBuffer = buffers[1],
         .IndexBuffer = buffers[2],
@@ -274,9 +296,13 @@ auto TDefaultRenderer::CreateGpuMesh(const std::string& meshName) -> void {
     };
 }
 
-auto TDefaultRenderer::CreateGpuMaterial(const std::string& materialName) -> void {
+auto TDefaultRenderer::CreateGpuMaterial(const std::string& assetMaterialName) -> void {
 
+    auto& assetMaterial = GetAssetMaterial(assetMaterialName);
 
+    g_gpuMaterials[assetMaterialName] = TGpuMaterial{
+
+    };
 }
 
 auto TDefaultRenderer::GetGpuMesh(const std::string& meshName) -> TGpuMesh& {

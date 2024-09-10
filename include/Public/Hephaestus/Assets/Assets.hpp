@@ -35,11 +35,16 @@ struct TAssetMesh {
     std::string MaterialName;
 };
 
+struct TAssetMaterial {
+    glm::vec4 BaseColor;
+};
+
 auto GetSafeResourceName(
     const char* const baseName,
     const char* const text,
     const char* const resourceType,
-    const std::size_t resourceIndex) -> std::string;
-auto ScanAsset(const std::filesystem::path& assetFilePath,
-               std::string_view baseName) -> std::expected<TScannedAsset, std::string>;
+    std::size_t resourceIndex) -> std::string;
+auto ScanAsset(const std::string& baseName,
+               const std::filesystem::path& assetFilePath) -> std::expected<TScannedAsset, std::string>;
 auto GetAssetMesh(const std::string& assetMeshName) -> TAssetMesh&;
+auto GetAssetMaterial(const std::string& assetMaterialName) -> TAssetMaterial&;

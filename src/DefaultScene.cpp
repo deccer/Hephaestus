@@ -10,7 +10,8 @@ TDefaultScene::~TDefaultScene() {
 
 auto TDefaultScene::Load() -> bool {
 
-    auto scannedAssetResult = ScanAsset("/home/deccer/Code/scenes/Bistro/scene.gltf", "SM_Bistro");
+    //auto scannedAssetResult = ScanAsset("SM_Bistro", "/home/deccer/Code/scenes/Bistro/scene.gltf");
+    auto scannedAssetResult = ScanAsset("SM_Bistro", "/home/deccer/Downloads/modular_ruins_c/modular_ruins_c.glb");
     if (!scannedAssetResult) {
         spdlog::error(scannedAssetResult.error());
         return false;

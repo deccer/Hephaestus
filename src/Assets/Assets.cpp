@@ -8,37 +8,39 @@
 
 #include <spdlog/spdlog.h>
 
+phmap::flat_hash_map<std::string, std::filesystem::path> g_scannedAssets = {};
 phmap::flat_hash_map<std::string, TAssetMesh> g_assetMeshes = {};
+phmap::flat_hash_map<std::string, TAssetMaterial> g_assetMaterials = {};
 
 auto GetSafeResourceName(
     const char* const text,
     const char* const resourceType,
-    const std::size_t resourceIndex) -> std::string {
+    std::size_t resourceIndex) -> std::string {
 
     return (text == nullptr) || strlen(text) == 0
            ? std::format("{}-{}", resourceType, resourceIndex)
            : std::format("{}", text);
 }
 
-auto ScanAsset(const std::filesystem::path& assetFilePath,
-               std::string_view baseName) -> std::expected<TScannedAsset, std::string> {
+auto ScanAsset(const std::string& baseName,
+               const std::filesystem::path& filePath) -> std::expected<TScannedAsset, std::string> {
 
     fastgltf::Parser parser;
 
-    auto dataResult = fastgltf::GltfDataBuffer::FromPath(assetFilePath);
-    if (dataResult.error() != fastgltf::Error::None) {
-        return std::unexpected(std::format("fastgltf: Failed to load glTF data: {}", fastgltf::getErrorMessage(dataResult.error())));
+    auto fgFile = fastgltf::MappedGltfFile::FromPath(filePath);
+    if (fgFile.error() != fastgltf::Error::None) {
+        return std::unexpected(std::format("fastgltf: Failed to load glTF data: {}", fastgltf::getErrorMessage(fgFile.error())));
     }
 
-    auto parentPath = assetFilePath.parent_path();
-    auto loadResult = parser.loadGltf(dataResult.get(), parentPath, fastgltf::Options::None);
+    auto parentPath = filePath.parent_path();
+    auto loadResult = parser.loadGltf(fgFile.get(), parentPath, fastgltf::Options::None);
     if (loadResult.error() != fastgltf::Error::None)
     {
         return std::unexpected(std::format("fastgltf: Failed to parse glTF: {}", fastgltf::getErrorMessage(loadResult.error())));
     }
 
     TScannedAsset assetScan = {
-        .Name = baseName.data()
+        .Name = baseName
     };
 
     auto& fgAsset = loadResult.get();
@@ -90,14 +92,74 @@ auto ScanAsset(const std::filesystem::path& assetFilePath,
     assetScan.Scenes.resize(fgAsset.scenes.size());
     for (std::size_t i = 0, end = fgAsset.scenes.size(); i < end; ++i) {
         assetScan.Scenes[i] = GetSafeResourceName(fgAsset.scenes[i].name.data(), "scene", i);
-    }    
+    }
+
+    g_scannedAssets[baseName] = filePath;
 
     return assetScan;
+}
+
+auto CreateAssetMesh(std::string_view assetMeshName) -> void {
+
+    const auto& filePath = g_scannedAssets.at(assetMeshName);
+
+    constexpr auto parserOptions =
+        fastgltf::Extensions::EXT_mesh_gpu_instancing |
+        fastgltf::Extensions::KHR_mesh_quantization |
+        fastgltf::Extensions::EXT_meshopt_compression |
+        fastgltf::Extensions::KHR_lights_punctual |
+        fastgltf::Extensions::EXT_texture_webp |
+        fastgltf::Extensions::KHR_texture_transform |
+        fastgltf::Extensions::KHR_texture_basisu |
+        fastgltf::Extensions::MSFT_texture_dds |
+        fastgltf::Extensions::KHR_materials_specular |
+        fastgltf::Extensions::KHR_materials_ior |
+        fastgltf::Extensions::KHR_materials_iridescence |
+        fastgltf::Extensions::KHR_materials_volume |
+        fastgltf::Extensions::KHR_materials_transmission |
+        fastgltf::Extensions::KHR_materials_clearcoat |
+        fastgltf::Extensions::KHR_materials_emissive_strength |
+        fastgltf::Extensions::KHR_materials_sheen |
+        fastgltf::Extensions::KHR_materials_unlit;
+    fastgltf::Parser parser(parserOptions);
+
+    auto dataResult = fastgltf::GltfDataBuffer::FromPath(filePath);
+    if (dataResult.error() != fastgltf::Error::None) {
+        spdlog::error("fastgltf: Failed to load glTF data: {}", fastgltf::getErrorMessage(dataResult.error()));
+        return;
+    }
+
+    constexpr auto gltfOptions =
+        fastgltf::Options::DontRequireValidAssetMember |
+        fastgltf::Options::AllowDouble |
+        fastgltf::Options::LoadExternalBuffers |
+        fastgltf::Options::LoadExternalImages;
+    const auto parentPath = filePath.parent_path();
+    auto loadResult = parser.loadGltf(dataResult.get(), parentPath, gltfOptions);
+    if (loadResult.error() != fastgltf::Error::None)
+    {
+        spdlog::error("fastgltf: Failed to parse glTF: {}", fastgltf::getErrorMessage(loadResult.error()));
+        return;
+    }
+
+    TAssetMesh assetMesh;
+
+    auto& fgAsset = loadResult.get();
+
+    ProcessTextures();
+    ProcessMaterials();
+    ProcessMeshes();
+    ProcessNodes();
 }
 
 auto GetAssetMesh(const std::string& assetMeshName) -> TAssetMesh& {
 
     assert(!assetMeshName.empty() || g_assetMeshes.contains(assetMeshName));
-
     return g_assetMeshes.at(assetMeshName);
+}
+
+auto GetAssetMaterial(const std::string& assetMaterialName) -> TAssetMaterial& {
+
+    assert(!assetMaterialName.empty() || g_assetMaterials.contains(assetMaterialName));
+    return g_assetMaterials.at(assetMaterialName);
 }
